@@ -225,6 +225,11 @@
       <label>公開開始日</label>
       <input type="date" id="editor-date">
       
+<label style="display:block; margin-top:15px; font-weight:bold;">公開ステータス（回答の可否）</label>
+      <select id="editor-is-open" style="margin-bottom:10px; font-weight:bold; background:#e8f6f3; color:#005f73;">
+        <option value="false">🔴 非公開（準備中・学生は回答不可）</option>
+        <option value="true">🟢 公開中（学生が回答可能）</option>
+      </select>
       <hr style="margin: 20px 0;">
       
       <div id="sessions-container"></div>
@@ -327,7 +332,7 @@
 // 🔗 GAS連携設定 (GitHub用)
 // ==========================================
 // ↓ここにGASのデプロイURLを貼り付けてください
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbywEgU16hVipqPC_oTKKzjNLK6i15-66xW5s9pi3gOiA5VqhJuUtEJPBXnfAo5Xzrofrg/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHUPPYUno7UCctH5ZZiuIFJxvgs7iFMzVq-bw0T98XPjwGA1m6eMt6ukFqiQet8IVkCg/exec";
 
 // GASと通信するための関数 (fetchを使用)
 async function callGAS(action, params = {}) {
@@ -515,6 +520,12 @@ function openLessonEditor(week, data) {
   document.getElementById('editor-title').value = data.title;
   document.getElementById('editor-date').value = data.date;
 
+if (data.isOpen === true || data.isOpen === "true") {
+    document.getElementById('editor-is-open').value = "true";
+  } else {
+    document.getElementById('editor-is-open').value = "false";
+  }
+
   const sContainer = document.getElementById('sessions-container');
   sContainer.innerHTML = "";
 
@@ -677,6 +688,8 @@ async function doSaveLesson() {
   const week = document.getElementById('editor-week').dataset.week;
   const title = document.getElementById('editor-title').value;
   const date = document.getElementById('editor-date').value;
+
+const isOpenValue = document.getElementById('editor-is-open').value === "true";
   
   const sItems = document.querySelectorAll('.session-item');
   let sessions = [];
@@ -716,7 +729,14 @@ async function doSaveLesson() {
   const jsonString = JSON.stringify({ sessions: sessions });
   const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
   
-  const res = await callGAS('saveLessonData', { courseId: currentCourseId, week: week, title: title, date: date, json: jsonString });
+  const res = await callGAS('saveLessonData', { 
+    courseId: currentCourseId, 
+    week: week, 
+    title: title, 
+    date: date, 
+    isOpen: isOpenValue,  
+    json: jsonString 
+  });
   
   alert("保存しました");
   closeEditor();
@@ -1002,6 +1022,38 @@ function startQuiz(lessonData) {
   
   content.innerHTML = html;
   
+const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
+  const savedDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
+
+  // 1. 保存されたデータがあれば画面に復元する
+  for (let i = 0; i < globalQIndex; i++) {
+    // 4択問題（ラジオボタン）の復元
+    if (savedDraft[`q${i}`] !== undefined) {
+      const radio = document.querySelector(`input[name="q${i}"][value="${savedDraft[`q${i}`]}"]`);
+      if (radio) radio.checked = true;
+    }
+    // 記述式問題（テキストエリア）の復元
+    const textarea = document.getElementById(`ans-text-${i}`);
+    if (textarea && savedDraft[`text${i}`] !== undefined) {
+      textarea.value = savedDraft[`text${i}`];
+      // 文字数カウントも更新
+      const countEl = document.getElementById(`count-${i}`);
+      if (countEl) countEl.innerText = textarea.value.length + "文字";
+    }
+  }
+
+  // 2. 学生が入力・選択するたびに自動保存するイベント
+  content.addEventListener('input', (e) => {
+    const currentDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
+    if (e.target.type === 'radio') {
+      currentDraft[e.target.name] = e.target.value; // 例: q0: "2"
+    } else if (e.target.tagName.toLowerCase() === 'textarea') {
+      const idNum = e.target.id.replace('ans-text-', ''); // "ans-text-1" -> "1"
+      currentDraft[`text${idNum}`] = e.target.value;
+    }
+    localStorage.setItem(draftKey, JSON.stringify(currentDraft));
+  });
+
   // すべての動画プレーヤーをセットアップ
   initMultipleYTPlayers(sessions);
 }
@@ -1214,6 +1266,9 @@ async function checkQuiz(quizData, week) {
     
     const msgEl = document.getElementById('submit-msg');
     if(msgEl) msgEl.innerText = "✅ 回答を先生に送信しました！";
+
+const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${week}`;
+    localStorage.removeItem(draftKey);
     
   } catch (e) {
     console.error("回答の保存に失敗しました", e);
