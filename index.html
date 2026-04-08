@@ -1162,6 +1162,37 @@ function stopTracking(idx) {
 }
 
 async function checkQuiz(quizData, week) {
+
+let isAllAnswered = true;
+  let firstUnanswered = -1;
+
+  for (let i = 0; i < quizData.length; i++) {
+    const q = quizData[i];
+    if (!q.type || q.type === 'choice') {
+      // 4択問題のチェック（ラジオボタンが選択されているか）
+      const sel = document.querySelector(`input[name="q${i}"]:checked`);
+      if (!sel) {
+        isAllAnswered = false;
+        firstUnanswered = i + 1;
+        break;
+      }
+    } else if (q.type === 'text') {
+      // 記述式問題のチェック（空欄のみ、または未入力か）
+      const textarea = document.getElementById(`ans-text-${i}`);
+      if (!textarea || textarea.value.trim() === "") {
+        isAllAnswered = false;
+        firstUnanswered = i + 1;
+        break;
+      }
+    }
+  }
+
+  // 未回答があればアラートを出して送信処理を中断する
+  if (!isAllAnswered) {
+    alert(`未回答の問題があります（Q${firstUnanswered}）。\nすべての問題に回答してから送信してください。`);
+    return; // ここで処理を止めるため、送信ボタンも消えません
+  }
+
   let score = 0;
   let totalScoreQuestions = 0; // 4択問題の総数
   
@@ -1279,7 +1310,6 @@ const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${week}`;
     }
   }
 }
-
 
 
 // PDFダウンロード実行関数
