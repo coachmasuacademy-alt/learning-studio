@@ -1272,15 +1272,15 @@ let isAllAnswered = true;
   resultHtml += `<div style="font-size:0.9em; color:#666;">※記述式は自己採点してください</div>`;
   
   resultHtml += `
-    <div style="margin-top:20px; text-align:center;">
-      <button class="btn-lms" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
-        📄 結果をPDFで保存する
-      </button>
-      <button class="btn-lms btn-secondary" onclick="window.location.reload();" data-html2canvas-ignore="true" style="margin-top:10px;">
-        終了して戻る
-      </button>
-    </div>
-  `;
+    <div style="margin-top:20px; text-align:center;">
+      <button class="btn-lms" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
+        📄 結果をPDFで保存する
+      </button>
+      <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();" data-html2canvas-ignore="true" style="margin-top:10px; margin-bottom:40px;">
+        終了して戻る
+      </button>
+    </div>
+  `;
   
   document.getElementById('quiz-result').innerHTML = resultHtml;
   document.getElementById('quiz-result').scrollIntoView({behavior:'smooth'});
@@ -1491,6 +1491,20 @@ function renderAdminCourses() {
       <td>${c.teacher}</td>
     </tr>`;
   });
+}
+
+function finishQuizAndBack() {
+  // 動画プレイヤーが再生中のままにならないよう破棄する
+  if (typeof currentYTPlayers !== 'undefined') {
+    currentYTPlayers.forEach(p => p && p.destroy && p.destroy());
+    currentYTPlayers = [];
+  }
+  
+  // クイズエリアを非表示にする
+  document.getElementById('student-quiz-area').classList.add('hidden');
+  
+  // 画面の一番上へスムーズにスクロールして戻す
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 </script>
 </body>
