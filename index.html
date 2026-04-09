@@ -1272,11 +1272,11 @@ let isAllAnswered = true;
   resultHtml += `<div style="font-size:0.9em; color:#666;">※記述式は自己採点してください</div>`;
   
   resultHtml += `
-    <div style="margin-top:20px; text-align:center;">
+    <div style="margin-top:20px; text-align:center; padding-bottom:100px;">
       <button class="btn-lms" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
         📄 結果をPDFで保存する
       </button>
-      <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();" data-html2canvas-ignore="true" style="margin-top:10px; margin-bottom:40px;">
+      <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();" data-html2canvas-ignore="true" style="margin-top:10px;">
         終了して戻る
       </button>
     </div>
@@ -1317,43 +1317,50 @@ const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${week}`;
 
 
 // PDFダウンロード実行関数
-function downloadQuizPDF(btn) {  // ←【変更】ここに btn を追加します
-  // 保存する対象のエリア
-  const element = document.getElementById('student-quiz-area');
-  
-  // ファイル名
-  const courseTitle = document.getElementById('student-course-title').innerText;
-  const quizTitle = document.getElementById('quiz-title').innerText;
-  const fileName = `${courseTitle}_${quizTitle}_結果.pdf`;
+function downloadQuizPDF(btn) {
+  // 保存する対象のエリア
+  const element = document.getElementById('student-quiz-area');
+  
+  // ファイル名
+  const courseTitle = document.getElementById('student-course-title').innerText;
+  const quizTitle = document.getElementById('quiz-title').innerText;
+  const fileName = `${courseTitle}_${quizTitle}_結果.pdf`;
 
-  // オプション設定
-  const opt = {
-    margin:       10,
-    filename:     fileName,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        scrollY: 0  // ★重要：これがないとスクロール時に真っ白になります
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  // ★重要追加：スマホのフリーズ対策。動画(iframe)を一時的に非表示にする
+  const iframes = element.querySelectorAll('iframe');
+  iframes.forEach(iframe => iframe.style.display = 'none');
 
-  // ボタンの表示変更
-  // 【変更】const btn = event.target; の行は削除しました
-  const originalText = btn.innerText;
-  btn.innerText = "PDF作成中...";
-  btn.disabled = true;
+  // オプション設定
+  const opt = {
+    margin:       10,
+    filename:     fileName,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        scrollY: 0 
+    },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
 
-  // PDF生成実行
-  html2pdf().set(opt).from(element).save().then(() => {
-    btn.innerText = originalText;
-    btn.disabled = false;
-  }).catch((err) => {
-    alert("PDF作成に失敗しました: " + err);
-    btn.innerText = originalText;
-    btn.disabled = false;
-  });
+  // ボタンの表示変更
+  const originalText = btn.innerText;
+  btn.innerText = "PDF作成中...";
+  btn.disabled = true;
+
+  // PDF生成実行
+  html2pdf().set(opt).from(element).save().then(() => {
+    btn.innerText = originalText;
+    btn.disabled = false;
+    // ★重要追加：PDF生成が終わったら動画を再表示する
+    iframes.forEach(iframe => iframe.style.display = 'block');
+  }).catch((err) => {
+    alert("PDF作成に失敗しました: " + err);
+    btn.innerText = originalText;
+    btn.disabled = false;
+    // ★重要追加：エラー時も動画を再表示する
+    iframes.forEach(iframe => iframe.style.display = 'block');
+  });
 }
 
 // ==========================================
