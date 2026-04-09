@@ -35,11 +35,15 @@
   .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 15px; }
   input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
   .btn-lms { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
-  .btn-lms:hover { opacity: 0.9; }
+
+ @media (hover: hover) and (pointer: fine) {
+    .btn-lms:hover { opacity: 0.9; }
+    .week-row:hover { background: #f0f8ff; }
+  }
+
   .btn-secondary { background: #7f8c8d; }
   .hidden { display: none; }
   .week-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-  .week-row:hover { background: #f0f8ff; }
   .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
   .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #666; }
   .tab.active { border-bottom: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
@@ -1268,15 +1272,15 @@ let isAllAnswered = true;
   resultHtml += `<div style="font-size:0.9em; color:#666;">※記述式は自己採点してください</div>`;
   
   resultHtml += `
-    <div style="margin-top:20px; text-align:center;">
-      <button class="btn-lms" onclick="downloadQuizPDF()" data-html2canvas-ignore="true" style="background:#ee9b00;">
-        📄 結果をPDFで保存する
-      </button>
-      <button class="btn-lms btn-secondary" onclick="location.reload()" data-html2canvas-ignore="true" style="margin-top:10px;">
-        終了して戻る
-      </button>
-    </div>
-  `;
+    <div style="margin-top:20px; text-align:center;">
+      <button class="btn-lms" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
+        📄 結果をPDFで保存する
+      </button>
+      <button class="btn-lms btn-secondary" onclick="window.location.reload();" data-html2canvas-ignore="true" style="margin-top:10px;">
+        終了して戻る
+      </button>
+    </div>
+  `;
   
   document.getElementById('quiz-result').innerHTML = resultHtml;
   document.getElementById('quiz-result').scrollIntoView({behavior:'smooth'});
@@ -1313,45 +1317,44 @@ const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${week}`;
 
 
 // PDFダウンロード実行関数
-function downloadQuizPDF() {
-  // 保存する対象のエリア
-  const element = document.getElementById('student-quiz-area');
-  
-  // ファイル名
-  const courseTitle = document.getElementById('student-course-title').innerText;
-  const quizTitle = document.getElementById('quiz-title').innerText;
-  const fileName = `${courseTitle}_${quizTitle}_結果.pdf`;
+function downloadQuizPDF(btn) {  // ←【変更】ここに btn を追加します
+  // 保存する対象のエリア
+  const element = document.getElementById('student-quiz-area');
+  
+  // ファイル名
+  const courseTitle = document.getElementById('student-course-title').innerText;
+  const quizTitle = document.getElementById('quiz-title').innerText;
+  const fileName = `${courseTitle}_${quizTitle}_結果.pdf`;
 
-  // オプション設定
-  const opt = {
-    margin:       10,
-    filename:     fileName,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        scrollY: 0  // ★重要：これがないとスクロール時に真っ白になります
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  // オプション設定
+  const opt = {
+    margin:       10,
+    filename:     fileName,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { 
+        scale: 2, 
+        useCORS: true, 
+        scrollY: 0  // ★重要：これがないとスクロール時に真っ白になります
+    },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
 
-  // ボタンの表示変更
-  const btn = event.target;
-  const originalText = btn.innerText;
-  btn.innerText = "PDF作成中...";
-  btn.disabled = true;
+  // ボタンの表示変更
+  // 【変更】const btn = event.target; の行は削除しました
+  const originalText = btn.innerText;
+  btn.innerText = "PDF作成中...";
+  btn.disabled = true;
 
-  // PDF生成実行
-  html2pdf().set(opt).from(element).save().then(() => {
-    btn.innerText = originalText;
-    btn.disabled = false;
-  }).catch((err) => {
-    alert("PDF作成に失敗しました: " + err);
-    btn.innerText = originalText;
-    btn.disabled = false;
-  });
+  // PDF生成実行
+  html2pdf().set(opt).from(element).save().then(() => {
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }).catch((err) => {
+    alert("PDF作成に失敗しました: " + err);
+    btn.innerText = originalText;
+    btn.disabled = false;
+  });
 }
-
 
 // ==========================================
 // 🛠 管理者用 JSロジック (検索・紐付け対応版)
