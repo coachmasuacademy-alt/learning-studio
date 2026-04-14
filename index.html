@@ -57,6 +57,13 @@
   .admin-table th { background: #eee; font-weight: bold; }
   .admin-section { margin-bottom: 30px; }
   .admin-section h3 { border-left: 5px solid #333; padding-left: 10px; background: #f0f0f0; padding: 5px 10px; }
+
+/* スマホ等で非表示にするクラス */
+  @media screen and (max-width: 768px) {
+    .hide-on-mobile {
+      display: none !important;
+    }
+  }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -1257,6 +1264,8 @@ let isAllAnswered = true;
 
   let resultHtml = "";
   const today = new Date().toLocaleDateString();
+  
+  // 1. レポートのヘッダー情報（前のバージョンにあったものを復活・整理）
   resultHtml += `
     <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px; text-align: left; background: #fff;">
       <h4 style="margin:0 0 10px 0; border-bottom:1px solid #ccc; padding-bottom:5px;">課題レポート</h4>
@@ -1266,14 +1275,16 @@ let isAllAnswered = true;
     </div>
   `;
 
+  // 2. 点数と注意書き
   if (totalScoreQuestions > 0) {
     resultHtml += `<div style="font-size:1.2em; font-weight:bold; margin-bottom:10px;">【4択成績】 ${score} / ${totalScoreQuestions} 点</div>`;
   }
   resultHtml += `<div style="font-size:0.9em; color:#666;">※記述式は自己採点してください</div>`;
   
+  // 3. ボタンエリア（ここに hide-on-mobile を適用）
   resultHtml += `
     <div style="margin-top:20px; text-align:center; padding-bottom:100px;">
-      <button class="btn-lms" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
+      <button class="btn-lms hide-on-mobile" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
         📄 結果をPDFで保存する
       </button>
       <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();" data-html2canvas-ignore="true" style="margin-top:10px;">
