@@ -505,8 +505,17 @@ async function openCourseEdit(id, name) {
     const lessons = res.lessons;
     for(let i=1; i<=15; i++) {
       const l = lessons[i];
+      
+      // ▼ 公開ステータス（isOpen）を判定してバッジを作成
+      let statusHtml = "";
+      if (l.isOpen === true || l.isOpen === "true") {
+        statusHtml = '<span style="color:green; font-weight:bold; font-size:0.9em; margin-right:8px;">🟢 公開中</span>';
+      } else {
+        statusHtml = '<span style="color:#e63946; font-weight:bold; font-size:0.9em; margin-right:8px;">🔴 非公開</span>';
+      }
+      
       div.innerHTML += `<div class="week-row">
-        <span>第${i}回: ${l.title || "（未設定）"} <small style="color:#666;">${l.date ? "公開:" + l.date : ""}</small></span>
+        <span>${statusHtml}第${i}回: ${l.title || "（未設定）"} <small style="color:#666;">${l.date ? "公開:" + l.date : ""}</small></span>
         <button class="btn-lms btn-secondary" style="width:auto; padding:5px 10px;" onclick='openLessonEditor(${i}, ${JSON.stringify(l)})'>設定</button>
       </div>`;
     }
