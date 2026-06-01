@@ -37,8 +37,8 @@
   .btn-lms { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
 
  @media (hover: hover) and (pointer: fine) {
-    .btn-lms:hover { opacity: 0.9; }
-    .week-row:hover { background: #f0f8ff; }
+    .btn-lms:hover { opacity: 0.9; }
+    .week-row:hover { background: #f0f8ff; }
   }
 
   .btn-secondary { background: #7f8c8d; }
@@ -49,87 +49,81 @@
   .tab.active { border-bottom: 2px solid var(--primary); color: var(--primary); font-weight: bold; }
   .status-open { color: green; font-weight: bold; }
 
-
-
-/* 管理者用テーブルスタイル */
+  /* 管理者用テーブルスタイル */
   .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
   .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
   .admin-table th { background: #eee; font-weight: bold; }
   .admin-section { margin-bottom: 30px; }
   .admin-section h3 { border-left: 5px solid #333; padding-left: 10px; background: #f0f0f0; padding: 5px 10px; }
 
-/* スマホ等で非表示にするクラス */
+  /* スマホ等で非表示にするクラス */
   @media screen and (max-width: 768px) {
     .hide-on-mobile {
       display: none !important;
     }
   }
 </style>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 </head>
 <body>
 
 <nav class="main-nav">
   <button class="nav-btn active" onclick="switchApp('lms')" id="nav-lms">📚 講義システム</button>
-  
 </nav>
 
 <div id="app-lms" class="app-container active">
   <div class="lms-wrapper">
     
-   <div id="view-login" class="card">
-  <div class="tabs">
-    <div class="tab active" onclick="switchLoginTab('student')">👨‍🎓 学生</div>
-    <div class="tab" onclick="switchLoginTab('teacher')">👨‍🏫 教員</div>
-<div class="tab" onclick="switchLoginTab('admin')">👨‍💻 管理者</div>
-  </div>
+    <div id="view-login" class="card">
+      <div class="tabs">
+        <div class="tab active" onclick="switchLoginTab('student')">👨‍🎓 学生</div>
+        <div class="tab" onclick="switchLoginTab('teacher')">👨‍🏫 教員</div>
+        <div class="tab" onclick="switchLoginTab('admin')">👨‍💻 管理者</div>
+      </div>
 
-  <div id="form-student-login">
-    <h3>学生ログイン</h3>
-    <input type="email" id="stu-email" placeholder="メールアドレス">
-    <input type="password" id="stu-pass" placeholder="パスワード">
-    <button class="btn-lms" onclick="doStudentLogin()">ログイン</button>
-    <hr>
-    <button class="btn-lms btn-secondary" onclick="showStuRegForm()">新規学生登録はこちら</button>
-  </div>
+      <div id="form-student-login">
+        <h3>学生ログイン</h3>
+        <input type="email" id="stu-email" placeholder="メールアドレス">
+        <input type="password" id="stu-pass" placeholder="パスワード">
+        <button class="btn-lms" onclick="doStudentLogin()">ログイン</button>
+        <hr>
+        <button class="btn-lms btn-secondary" onclick="showStuRegForm()">新規学生登録はこちら</button>
+      </div>
 
-  <div id="form-student-reg" class="hidden">
-    <h3>👨‍🎓 学生アカウント作成</h3>
-<input type="text" id="stu-reg-id" placeholder="学籍番号" style="margin-bottom:5px;">
-    <input type="text" id="stu-reg-name" placeholder="お名前">
-    <input type="email" id="stu-reg-email" placeholder="メールアドレス">
-    <input type="password" id="stu-reg-pass" placeholder="パスワード">
-    <button class="btn-lms" onclick="doStudentRegister()">登録する</button>
-    <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideStuRegForm()">キャンセル</button>
-  </div>
+      <div id="form-student-reg" class="hidden">
+        <h3>👨‍🎓 学生アカウント作成</h3>
+        <input type="text" id="stu-reg-id" placeholder="学籍番号" style="margin-bottom:5px;">
+        <input type="text" id="stu-reg-name" placeholder="お名前">
+        <input type="email" id="stu-reg-email" placeholder="メールアドレス">
+        <input type="password" id="stu-reg-pass" placeholder="パスワード">
+        <button class="btn-lms" onclick="doStudentRegister()">登録する</button>
+        <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideStuRegForm()">キャンセル</button>
+      </div>
 
-  <div id="form-teacher-login" class="hidden">
-    <h3>教員ログイン</h3>
-    <input type="email" id="tea-email" placeholder="メールアドレス">
-    <input type="password" id="tea-pass" placeholder="パスワード">
-    <button class="btn-lms" onclick="doTeacherLogin()">ログイン</button>
-    <hr>
-    <button class="btn-lms btn-secondary" onclick="showRegForm()">新規教員登録はこちら</button>
-  </div>
-  
-  <div id="form-teacher-reg" class="hidden">
-    <h3>👨‍🏫 教員アカウント作成</h3>
-    <input type="text" id="reg-name" placeholder="お名前">
-    <input type="email" id="reg-email" placeholder="メールアドレス">
-    <input type="password" id="reg-pass" placeholder="パスワード">
-    <button class="btn-lms" onclick="doTeacherRegister()">登録する</button>
-    <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideRegForm()">キャンセル</button>
-  </div>
+      <div id="form-teacher-login" class="hidden">
+        <h3>教員ログイン</h3>
+        <input type="email" id="tea-email" placeholder="メールアドレス">
+        <input type="password" id="tea-pass" placeholder="パスワード">
+        <button class="btn-lms" onclick="doTeacherLogin()">ログイン</button>
+        <hr>
+        <button class="btn-lms btn-secondary" onclick="showRegForm()">新規教員登録はこちら</button>
+      </div>
+      
+      <div id="form-teacher-reg" class="hidden">
+        <h3>👨‍🏫 教員アカウント作成</h3>
+        <input type="text" id="reg-name" placeholder="お名前">
+        <input type="email" id="reg-email" placeholder="メールアドレス">
+        <input type="password" id="reg-pass" placeholder="パスワード">
+        <button class="btn-lms" onclick="doTeacherRegister()">登録する</button>
+        <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideRegForm()">キャンセル</button>
+      </div>
 
-<div id="form-admin-login" class="hidden">
-    <h3>管理者ログイン</h3>
-    <input type="password" id="admin-pass" placeholder="管理者パスワード">
-    <button class="btn-lms" onclick="doAdminLogin()" style="background:#333;">管理者としてログイン</button>
-  </div>
-</div>
-
+      <div id="form-admin-login" class="hidden">
+        <h3>管理者ログイン</h3>
+        <input type="password" id="admin-pass" placeholder="管理者パスワード">
+        <button class="btn-lms" onclick="doAdminLogin()" style="background:#333;">管理者としてログイン</button>
+      </div>
+    </div>
 
     <div id="view-teacher-dash" class="hidden">
       <div class="card">
@@ -155,8 +149,86 @@
       <div class="card">
         <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToTeacherDash()">← 戻る</button>
         <h2 id="edit-course-title" style="margin-top:0;">講義編集</h2>
+        <button class="btn-lms" style="background:#005f73; margin-bottom:20px;" onclick="openAllSubmissions()">📊 全15回の提出状況を一括確認・CSV出力</button>
         <p>編集したい回を選択してください</p>
         <div id="edit-lesson-list"></div>
+      </div>
+    </div>
+
+    <div id="view-submissions" class="hidden">
+      <div class="card">
+        <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToCourseEdit()">← 戻る</button>
+        <h2 id="submissions-title" style="margin-top:0;">提出状況</h2>
+        <button class="btn-lms" style="background:#27ae60; margin-bottom: 15px; width:auto;" onclick="downloadSubmissionsCSV()">📥 CSVで出力する</button>
+        
+        <div style="overflow-x:auto;">
+          <table class="admin-table" id="submissions-table">
+            <thead>
+              <tr>
+                <th style="width: 50px; text-align: center;">No.</th>
+                <th>学籍番号</th>
+                <th>氏名</th>
+                <th>提出日時</th>
+                <th>得点</th>
+                <th>回答内容</th>
+              </tr>
+            </thead>
+            <tbody id="list-submissions"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-all-submissions" class="hidden" style="max-width: 100%; margin: 20px;">
+      <div class="card" style="max-width: 1200px; margin: 0 auto;">
+        <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToCourseEditFromAll()">← 戻る</button>
+        <h2 id="all-submissions-title" style="margin-top:0;">全回提出状況一覧</h2>
+        <button class="btn-lms" style="background:#27ae60; margin-bottom: 15px; width:auto;" onclick="downloadAllSubmissionsCSV()">📥 全回状況をCSVで出力</button>
+        
+        <div style="overflow-x:auto; max-height: 500px; overflow-y: auto;">
+          <table class="admin-table" style="font-size: 0.8rem; min-width: 1000px;">
+            <thead style="position: sticky; top: 0; z-index: 10; background: #eee;">
+              <tr>
+                <th style="min-width: 40px; text-align: center;">No.</th>
+                <th style="min-width: 80px;">学籍番号</th>
+                <th style="min-width: 100px;">氏名</th>
+                <th style="min-width: 90px; color: #005f73;">合計得点</th>
+                <th>第1回</th><th>第2回</th><th>第3回</th><th>第4回</th><th>第5回</th>
+                <th>第6回</th><th>第7回</th><th>第8回</th><th>第9回</th><th>第10回</th>
+                <th>第11回</th><th>第12回</th><th>第13回</th><th>第14回</th><th>第15回</th>
+              </tr>
+            </thead>
+            <tbody id="list-all-submissions"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-quiz-editor" class="card hidden" style="border: 2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
+      <h3 style="margin-top:0;">第 <span id="editor-week"></span> 回：課題設定</h3>
+      
+      <label>タイトル</label>
+      <input type="text" id="editor-title" placeholder="例：バイオメカニクス基礎テスト">
+      
+      <label>公開開始日</label>
+      <input type="date" id="editor-date">
+      
+      <label style="display:block; margin-top:15px; font-weight:bold;">公開ステータス（回答の可否）</label>
+      <select id="editor-is-open" style="margin-bottom:10px; font-weight:bold; background:#e8f6f3; color:#005f73;">
+        <option value="false">🔴 非公開（準備中・学生は回答不可）</option>
+        <option value="true">🟢 公開中（学生が回答可能）</option>
+      </select>
+      <hr style="margin: 20px 0;">
+      
+      <div id="sessions-container"></div>
+
+      <button class="btn-lms btn-secondary" onclick="addSessionUI()" style="margin-bottom: 20px; border: 2px dashed #005f73; background: #e0f2f1; color: #005f73; font-weight:bold; width: 100%;">
+        ＋ 新しいセッション（動画 ＋ 問題のまとまり）を追加する
+      </button>
+
+      <div style="display:flex; gap:10px; border-top: 1px solid #ccc; padding-top: 15px;">
+        <button class="btn-lms" onclick="doSaveLesson()">保存する</button>
+        <button class="btn-lms btn-secondary" onclick="closeEditor()">キャンセル</button>
       </div>
     </div>
 
@@ -170,7 +242,7 @@
 
       <div class="card" style="background:#fff3e0;">
         <h3>➕ 新しい講義を履修登録する</h3>
-        <p style="font-size:0.9rem; margin-top:0;">先生から教えられたIDとパスワードを入力してください。</p>
+        <p style="font-size:0.9rem; margin-top:0;">IDとパスワードを入力してください。</p>
         <div style="display:flex; gap:10px;">
             <input type="text" id="join-course-id" placeholder="講義ID" style="flex:1;">
             <input type="text" id="join-course-pass" placeholder="講義パスワード" style="flex:1;">
@@ -196,84 +268,7 @@
       </div>
     </div>
 
-
-
-    <div id="view-teacher-dash" class="hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h2 id="teacher-name-display" style="margin:0;">先生</h2>
-          <button class="btn-lms btn-secondary" style="width:auto;" onclick="location.reload()">ログアウト</button>
-        </div>
-      </div>
-      
-      <div class="card" style="background:#e8f6f3;">
-        <h3>新規講義の作成</h3>
-        <input type="text" id="new-course-id" placeholder="講義ID (学生ログイン用)">
-        <input type="text" id="new-course-pass" placeholder="パスワード (学生ログイン用)">
-        <input type="text" id="new-course-name" placeholder="講義名">
-        <button class="btn-lms" onclick="doCreateCourse()">講義を作成</button>
-      </div>
-
-      <h3>担当講義一覧</h3>
-      <div id="teacher-course-list"></div>
-    </div>
-
-    <div id="view-course-edit" class="hidden">
-      <div class="card">
-        <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToTeacherDash()">← 戻る</button>
-        <h2 id="edit-course-title" style="margin-top:0;">講義編集</h2>
-        <p>編集したい回を選択してください</p>
-        <div id="edit-lesson-list"></div>
-      </div>
-    </div>
-
-    <div id="view-quiz-editor" class="card hidden" style="border: 2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
-      <h3 style="margin-top:0;">第 <span id="editor-week"></span> 回：課題設定</h3>
-      
-      <label>タイトル</label>
-      <input type="text" id="editor-title" placeholder="例：バイオメカニクス基礎テスト">
-      
-      <label>公開開始日</label>
-      <input type="date" id="editor-date">
-      
-<label style="display:block; margin-top:15px; font-weight:bold;">公開ステータス（回答の可否）</label>
-      <select id="editor-is-open" style="margin-bottom:10px; font-weight:bold; background:#e8f6f3; color:#005f73;">
-        <option value="false">🔴 非公開（準備中・学生は回答不可）</option>
-        <option value="true">🟢 公開中（学生が回答可能）</option>
-      </select>
-      <hr style="margin: 20px 0;">
-      
-      <div id="sessions-container"></div>
-
-      <button class="btn-lms btn-secondary" onclick="addSessionUI()" style="margin-bottom: 20px; border: 2px dashed #005f73; background: #e0f2f1; color: #005f73; font-weight:bold; width: 100%;">
-        ＋ 新しいセッション（動画 ＋ 問題のまとまり）を追加する
-      </button>
-
-      <div style="display:flex; gap:10px; border-top: 1px solid #ccc; padding-top: 15px;">
-        <button class="btn-lms" onclick="doSaveLesson()">保存する</button>
-        <button class="btn-lms btn-secondary" onclick="closeEditor()">キャンセル</button>
-      </div>
-    </div>
-
-    <div id="view-student-dash" class="hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h2 id="student-course-title" style="margin:0;">講義</h2>
-          <button class="btn-lms btn-secondary" style="width:auto;" onclick="location.reload()">終了</button>
-        </div>
-      </div>
-      
-      <h3>授業一覧</h3>
-      <div id="student-lesson-list" class="card"></div>
-      
-      <div id="student-quiz-area" class="card hidden">
-        <h3 id="quiz-title"></h3>
-        <div id="quiz-content"></div>
-        <div id="quiz-result" style="margin-top:10px; font-weight:bold; font-size:1.2em;"></div>
-      </div>
-</div>
-
-<div id="view-admin-dash" class="hidden">
+    <div id="view-admin-dash" class="hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h2 style="margin:0;">🛠 管理者ダッシュボード</h2>
@@ -285,18 +280,12 @@
         <div class="admin-section">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
             <h3>👨‍🎓 学生一覧 (<span id="count-students">0</span>名)</h3>
-            <input type="text" id="search-student" placeholder="🔍 学籍番号 or 氏名で検索" 
-                   style="width:250px; margin:0;" oninput="filterAdminStudents()">
+            <input type="text" id="search-student" placeholder="🔍 学籍番号 or 氏名で検索" style="width:250px; margin:0;" oninput="filterAdminStudents()">
           </div>
-          
           <div style="overflow-x:auto; max-height:400px; overflow-y:auto; margin-top:10px;">
             <table class="admin-table">
               <thead style="position:sticky; top:0; z-index:1;">
-                <tr>
-                  <th>学籍番号</th>
-                  <th>氏名</th>
-                  <th>Email</th>
-                  <th>履修中の講義</th> </tr>
+                <tr><th>学籍番号</th><th>氏名</th><th>Email</th><th>履修中の講義</th></tr>
               </thead>
               <tbody id="list-students"></tbody>
             </table>
@@ -306,17 +295,12 @@
         <div class="admin-section">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
             <h3>👨‍🏫 教員一覧 (<span id="count-teachers">0</span>名)</h3>
-            <input type="text" id="search-teacher" placeholder="🔍 氏名で検索" 
-                   style="width:250px; margin:0;" oninput="filterAdminTeachers()">
+            <input type="text" id="search-teacher" placeholder="🔍 氏名で検索" style="width:250px; margin:0;" oninput="filterAdminTeachers()">
           </div>
-
           <div style="overflow-x:auto; margin-top:10px;">
             <table class="admin-table">
               <thead>
-                <tr>
-                  <th>名前</th>
-                  <th>Email</th>
-                  <th>担当している講義</th> </tr>
+                <tr><th>名前</th><th>Email</th><th>担当している講義</th></tr>
               </thead>
               <tbody id="list-teachers"></tbody>
             </table>
@@ -334,33 +318,26 @@
         </div>
       </div>
     </div>
-    </div>
-  </div></div>
+
+  </div>
+</div>
 
 <script>
-
 // ==========================================
-// 🔗 GAS連携設定 (GitHub用)
+// 🔗 GAS連携設定
 // ==========================================
-// ↓ここにGASのデプロイURLを貼り付けてください
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyHUPPYUno7UCctH5ZZiuIFJxvgs7iFMzVq-bw0T98XPjwGA1m6eMt6ukFqiQet8IVkCg/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxj93MW0RqiZ0SQPwz6gGkWEDC4L3T2Ho3d574F3PsNnJc9BrPBPb8XksQ1LLuxAJ6z8A/exec";
 
-// GASと通信するための関数 (fetchを使用)
+// データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
+let currentLessonsData = {};
+
 async function callGAS(action, params = {}) {
-  // パラメータをFormData形式に変換
   const formData = new URLSearchParams();
   formData.append('action', action);
-  for (const key in params) {
-    formData.append(key, params[key]);
-  }
-
+  for (const key in params) { formData.append(key, params[key]); }
   try {
-    const response = await fetch(GAS_API_URL, {
-      method: "POST",
-      body: formData
-    });
-    const result = await response.json();
-    return result;
+    const response = await fetch(GAS_API_URL, { method: "POST", body: formData });
+    return await response.json();
   } catch (error) {
     alert("通信エラーが発生しました: " + error);
     return { success: false };
@@ -371,16 +348,14 @@ async function callGAS(action, params = {}) {
 // 🧭 ナビゲーション制御
 // ==========================================
 function switchApp(appName) {
-
   document.querySelectorAll('.app-container').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-  
   document.getElementById('app-' + appName).classList.add('active');
   document.getElementById('nav-' + appName).classList.add('active');
 }
 
 // ==========================================
-// 🏫 LMS Logic (講義管理)
+// 🏫 LMS Logic (講義管理・教員用)
 // ==========================================
 let currentTeacherEmail = "";
 let currentCourseId = "";
@@ -390,22 +365,15 @@ let currentStudentId = "";
 function switchLoginTab(type) {
   document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
   event.target.classList.add('active');
-
   document.getElementById('form-student-login').classList.add('hidden');
   document.getElementById('form-student-reg').classList.add('hidden');
   document.getElementById('form-teacher-login').classList.add('hidden');
   document.getElementById('form-teacher-reg').classList.add('hidden');
-  // ▼追加: 管理者フォームを隠す
   document.getElementById('form-admin-login').classList.add('hidden');
 
-  if(type === 'student') {
-    document.getElementById('form-student-login').classList.remove('hidden');
-  } else if (type === 'teacher') {
-    document.getElementById('form-teacher-login').classList.remove('hidden');
-  } else if (type === 'admin') {
-    // ▼追加: 管理者フォームを表示
-    document.getElementById('form-admin-login').classList.remove('hidden');
-  }
+  if(type === 'student') document.getElementById('form-student-login').classList.remove('hidden');
+  else if (type === 'teacher') document.getElementById('form-teacher-login').classList.remove('hidden');
+  else if (type === 'admin') document.getElementById('form-admin-login').classList.remove('hidden');
 }
 
 function showRegForm() {
@@ -417,41 +385,31 @@ function hideRegForm() {
   document.getElementById('form-teacher-login').classList.remove('hidden');
 }
 
-// --- 通信部分を callGAS に置き換え ---
-
 async function doTeacherRegister() {
   const n = document.getElementById('reg-name').value;
   const e = document.getElementById('reg-email').value;
   const p = document.getElementById('reg-pass').value;
   if(!n || !e || !p) return alert("全て入力してください");
   
-  // ボタンを一時無効化（連打防止）
   const btn = event.target; btn.disabled = true; btn.innerText = "通信中...";
-
   const res = await callGAS('teacherRegister', {name: n, email: e, password: p});
-  
   alert(res.message);
   if(res.success) hideRegForm();
-  
   btn.disabled = false; btn.innerText = "登録する";
 }
 
 async function doTeacherLogin() {
   const e = document.getElementById('tea-email').value;
   const p = document.getElementById('tea-pass').value;
-  
   const btn = event.target; btn.disabled = true; btn.innerText = "ログイン中...";
 
   const res = await callGAS('teacherLogin', {email: e, password: p});
-  
   if(res.success) {
     currentTeacherEmail = res.email;
     document.getElementById('teacher-name-display').innerText = res.name + " 先生";
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-teacher-dash').classList.remove('hidden');
     loadTeacherCourses();
-
-    
   } else {
     alert(res.message);
   }
@@ -461,7 +419,6 @@ async function doTeacherLogin() {
 async function loadTeacherCourses() {
   document.getElementById('teacher-course-list').innerHTML = "<p>読み込み中...</p>";
   const res = await callGAS('getTeacherCourses', {email: currentTeacherEmail});
-  
   const div = document.getElementById('teacher-course-list');
   div.innerHTML = "";
   if(res.success && res.list) {
@@ -498,28 +455,29 @@ async function openCourseEdit(id, name) {
   document.getElementById('edit-lesson-list').innerHTML = "<p>データ取得中...</p>";
   
   const res = await callGAS('getLessonsForTeacher', {courseId: id});
-  
   if(res.success) {
+    currentLessonsData = res.lessons; // データを退避
     const div = document.getElementById('edit-lesson-list');
     div.innerHTML = "";
-    const lessons = res.lessons;
     for(let i=1; i<=15; i++) {
-      const l = lessons[i];
-      
-      // ▼ 公開ステータス（isOpen）を判定してバッジを作成
-      let statusHtml = "";
-      if (l.isOpen === true || l.isOpen === "true") {
-        statusHtml = '<span style="color:green; font-weight:bold; font-size:0.9em; margin-right:8px;">🟢 公開中</span>';
-      } else {
-        statusHtml = '<span style="color:#e63946; font-weight:bold; font-size:0.9em; margin-right:8px;">🔴 非公開</span>';
-      }
+      const l = res.lessons[i];
+      let statusHtml = (l.isOpen === true || l.isOpen === "true") ? 
+        '<span style="color:green; font-weight:bold; font-size:0.9em; margin-right:8px;">🟢 公開中</span>' : 
+        '<span style="color:#e63946; font-weight:bold; font-size:0.9em; margin-right:8px;">🔴 非公開</span>';
       
       div.innerHTML += `<div class="week-row">
         <span>${statusHtml}第${i}回: ${l.title || "（未設定）"} <small style="color:#666;">${l.date ? "公開:" + l.date : ""}</small></span>
-        <button class="btn-lms btn-secondary" style="width:auto; padding:5px 10px;" onclick='openLessonEditor(${i}, ${JSON.stringify(l)})'>設定</button>
+        <div style="display:flex; gap:5px;">
+          <button class="btn-lms" style="width:auto; padding:5px 10px; background:#27ae60; color:white;" onclick="openSubmissions(${i})">提出状況</button>
+          <button class="btn-lms btn-secondary" style="width:auto; padding:5px 10px;" onclick="openLessonEditorByIndex(${i})">設定</button>
+        </div>
       </div>`;
     }
   }
+}
+
+function openLessonEditorByIndex(week) {
+  openLessonEditor(week, currentLessonsData[week]);
 }
 
 function backToTeacherDash() {
@@ -528,65 +486,43 @@ function backToTeacherDash() {
 }
 
 // ==========================================
-// ✏️ 教員用課題エディタ機能（複数セッション対応版）
+// ✏️ 教員用課題エディタ機能
 // ==========================================
-
 function openLessonEditor(week, data) {
   document.getElementById('view-quiz-editor').classList.remove('hidden');
   document.getElementById('view-course-edit').classList.add('hidden');
   
   document.getElementById('editor-week').innerText = week;
   document.getElementById('editor-week').dataset.week = week;
-  document.getElementById('editor-title').value = data.title;
-  document.getElementById('editor-date').value = data.date;
-
-if (data.isOpen === true || data.isOpen === "true") {
-    document.getElementById('editor-is-open').value = "true";
-  } else {
-    document.getElementById('editor-is-open').value = "false";
-  }
+  document.getElementById('editor-title').value = data.title || "";
+  document.getElementById('editor-date').value = data.date || "";
+  document.getElementById('editor-is-open').value = (data.isOpen === true || data.isOpen === "true") ? "true" : "false";
 
   const sContainer = document.getElementById('sessions-container');
   sContainer.innerHTML = "";
 
-  // 過去のデータ構造も読み込めるように解析
   let sessions = [];
   try {
     const parsed = JSON.parse(data.quiz);
-    if (parsed && parsed.sessions) {
-      sessions = parsed.sessions; // 新しいセッション形式
-    } else if (Array.isArray(parsed)) {
-      sessions = [{ title: "セッション 1", videoUrl: "", requireVideo: false, questions: parsed }]; // 初期形式
-    } else if (parsed && typeof parsed === 'object') {
-      sessions = [{
-        title: "セッション 1",
-        videoUrl: parsed.videoUrl || "",
-        requireVideo: parsed.requireVideo || false,
-        questions: parsed.questions || []
-      }]; // 前回までの形式
-    }
+    if (parsed && parsed.sessions) sessions = parsed.sessions;
+    else if (Array.isArray(parsed)) sessions = [{ title: "セッション 1", videoUrl: "", requireVideo: false, questions: parsed }];
   } catch(e) { }
 
-  if (sessions.length === 0) {
-    sessions.push({ title: "セッション 1", videoUrl: "", requireVideo: false, questions: [] });
-  }
+  if (sessions.length === 0) sessions.push({ title: "セッション 1", videoUrl: "", requireVideo: false, questions: [] });
 
-  // セッションと問題を描画
   sessions.forEach(sess => {
     const sNode = addSessionUI(sess);
     if (sess.questions && sess.questions.length > 0) {
       sess.questions.forEach(q => addQuestionUI(sNode.querySelector('.questions-container'), q));
     } else {
-      addQuestionUI(sNode.querySelector('.questions-container')); // 空のフォーム
+      addQuestionUI(sNode.querySelector('.questions-container'));
     }
   });
 }
 
-// セッションを追加する関数
 function addSessionUI(initialData = null) {
   const container = document.getElementById('sessions-container');
   const index = container.children.length + 1;
-  
   const title = initialData ? initialData.title : `セッション ${index}`;
   const videoUrl = initialData ? initialData.videoUrl : "";
   const requireVideo = initialData ? initialData.requireVideo : false;
@@ -594,41 +530,29 @@ function addSessionUI(initialData = null) {
   const div = document.createElement('div');
   div.className = "session-item";
   div.style.cssText = "background: #fff; padding: 15px; border: 2px solid #ccc; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);";
-  
   div.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <input type="text" class="s-title" value="${title}" placeholder="セッション名 (例: 前半の解説)" style="font-size:1.1rem; font-weight:bold; width:70%; border:none; border-bottom:2px solid var(--primary); background:transparent;">
+      <input type="text" class="s-title" value="${title}" placeholder="セッション名" style="font-size:1.1rem; font-weight:bold; width:70%; border:none; border-bottom:2px solid var(--primary); background:transparent;">
       <button onclick="deleteSessionUI(this)" style="background:#ef5350; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px; font-size:12px;">🗑 セッション削除</button>
     </div>
-    
-    <label style="display:block; margin-top:10px; font-size:0.9rem;">🎥 YouTube動画URL (空欄なら動画なし)</label>
-    <input type="text" class="s-youtube" placeholder="例: https://www.youtube.com/watch?v=..." value="${videoUrl}">
-    
+    <label style="display:block; margin-top:10px; font-size:0.9rem;">🎥 YouTube動画URL</label>
+    <input type="text" class="s-youtube" placeholder="URL" value="${videoUrl}">
     <label style="display:flex; align-items:center; margin-top:5px; margin-bottom:15px; font-size: 0.85rem; font-weight:bold; color:var(--primary); cursor:pointer;">
       <input type="checkbox" class="s-require-video" style="width:auto; margin-right:8px; transform:scale(1.2);" ${requireVideo ? "checked" : ""}>
       ☑ 動画を視聴するまでこのセッションの問題を表示しない
     </label>
-    
     <div class="questions-container" style="padding-left:10px; border-left:3px solid #eee;"></div>
-    
-    <button class="btn-lms btn-secondary" onclick="addQuestionUI(this.previousElementSibling)" style="margin-top: 10px; border: 1px dashed #333; background: #f9f9f9; color: #333; font-size:0.9rem; padding:8px;">
-      ＋ このセッションに問題を追加
-    </button>
+    <button class="btn-lms btn-secondary" onclick="addQuestionUI(this.previousElementSibling)" style="margin-top: 10px; border: 1px dashed #333; background: #f9f9f9; color: #333; font-size:0.9rem; padding:8px;">＋ 問題を追加</button>
   `;
   container.appendChild(div);
-
-  // 手動で追加された場合は空の問題を1つ自動生成
   if (!initialData) addQuestionUI(div.querySelector('.questions-container'));
   return div;
 }
 
-// セッションを削除する関数
 function deleteSessionUI(btn) {
-  if(!confirm("このセッション（動画と問題すべて）を削除しますか？")) return;
-  btn.closest('.session-item').remove();
+  if(confirm("このセッションを削除しますか？")) btn.closest('.session-item').remove();
 }
 
-// 問題を追加する関数
 function addQuestionUI(container, initialData = null) {
   const type = initialData ? (initialData.type || "choice") : "choice";
   const text = initialData ? initialData.text : "";
@@ -639,7 +563,6 @@ function addQuestionUI(container, initialData = null) {
   const div = document.createElement('div');
   div.className = "question-item";
   div.style.cssText = "background: #f4f4f9; padding: 15px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px;";
-  
   div.innerHTML = `
     <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
       <div style="display:flex; gap:10px; align-items:center;">
@@ -651,9 +574,7 @@ function addQuestionUI(container, initialData = null) {
       </div>
       <button onclick="deleteQuestionUI(this)" style="background:#999; color:white; border:none; padding:2px 8px; cursor:pointer; border-radius:4px; font-size:12px;">削除</button>
     </div>
-
-    <input type="text" class="q-text" placeholder="問題文を入力" value="${text}" style="margin-bottom:10px; font-weight:bold;">
-    
+    <input type="text" class="q-text" placeholder="問題文" value="${text}" style="margin-bottom:10px; font-weight:bold;">
     <div class="area-choice" style="display:${type === 'choice' ? 'block' : 'none'};">
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
         <input type="text" class="q-opt0" placeholder="選択肢 A" value="${opts[0]}">
@@ -661,80 +582,50 @@ function addQuestionUI(container, initialData = null) {
         <input type="text" class="q-opt2" placeholder="選択肢 C" value="${opts[2]}">
         <input type="text" class="q-opt3" placeholder="選択肢 D" value="${opts[3]}">
       </div>
-      <label style="font-size:12px;">正解:</label>
-      <select class="q-ans" style="margin-bottom:10px;">
+      <select class="q-ans">
         <option value="0" ${ans == 0 ? "selected" : ""}>A</option>
         <option value="1" ${ans == 1 ? "selected" : ""}>B</option>
         <option value="2" ${ans == 2 ? "selected" : ""}>C</option>
         <option value="3" ${ans == 3 ? "selected" : ""}>D</option>
       </select>
     </div>
-
     <label style="font-size:12px;">解説 / 解答例:</label>
-    <input type="text" class="q-exp" placeholder="正解の理由や模範解答を入力" value="${exp}">
+    <input type="text" class="q-exp" value="${exp}">
   `;
   container.appendChild(div);
   updateQuestionLabels(container);
 }
 
-// 4択/記述式の切り替え制御
 function toggleQuestionType(selectElem) {
-  const parent = selectElem.closest('.question-item');
-  const choiceArea = parent.querySelector('.area-choice');
-  if(selectElem.value === 'text') {
-    choiceArea.style.display = 'none';
-  } else {
-    choiceArea.style.display = 'block';
-  }
+  selectElem.closest('.question-item').querySelector('.area-choice').style.display = (selectElem.value === 'text') ? 'none' : 'block';
 }
-
-// 問題を削除する関数
 function deleteQuestionUI(btn) {
   const container = btn.closest('.questions-container');
   btn.closest('.question-item').remove();
   updateQuestionLabels(container);
 }
-
-// 問題の番号を振り直す関数
 function updateQuestionLabels(container) {
-  const items = container.querySelectorAll('.question-item .q-label');
-  items.forEach((item, idx) => {
-    item.innerText = `問 ${idx + 1}`;
-  });
+  container.querySelectorAll('.question-item .q-label').forEach((item, idx) => { item.innerText = `問 ${idx + 1}`; });
 }
 
-// 保存実行関数
 async function doSaveLesson() {
   const week = document.getElementById('editor-week').dataset.week;
   const title = document.getElementById('editor-title').value;
   const date = document.getElementById('editor-date').value;
-
-const isOpenValue = document.getElementById('editor-is-open').value === "true";
+  const isOpenValue = document.getElementById('editor-is-open').value === "true";
   
-  const sItems = document.querySelectorAll('.session-item');
   let sessions = [];
-  
-  // セッションごとにデータをまとめる
-  sItems.forEach(sItem => {
-    const sTitle = sItem.querySelector('.s-title').value;
-    const sYoutube = sItem.querySelector('.s-youtube').value;
-    const sRequire = sItem.querySelector('.s-require-video').checked;
-    
+  document.querySelectorAll('.session-item').forEach(sItem => {
     let questions = [];
-    const qItems = sItem.querySelectorAll('.question-item');
-    qItems.forEach(item => {
+    sItem.querySelectorAll('.question-item').forEach(item => {
       const type = item.querySelector('.q-type').value;
       const text = item.querySelector('.q-text').value;
       const exp = item.querySelector('.q-exp').value;
-      
       if(text) {
         if (type === 'choice') {
           questions.push({
             type: 'choice', text: text,
-            options: [
-              item.querySelector('.q-opt0').value, item.querySelector('.q-opt1').value,
-              item.querySelector('.q-opt2').value, item.querySelector('.q-opt3').value
-            ],
+            options: [item.querySelector('.q-opt0').value, item.querySelector('.q-opt1').value, item.querySelector('.q-opt2').value, item.querySelector('.q-opt3').value],
             answer: parseInt(item.querySelector('.q-ans').value), explanation: exp
           });
         } else {
@@ -742,40 +633,30 @@ const isOpenValue = document.getElementById('editor-is-open').value === "true";
         }
       }
     });
-    
-    sessions.push({ title: sTitle, videoUrl: sYoutube, requireVideo: sRequire, questions: questions });
+    sessions.push({ title: sItem.querySelector('.s-title').value, videoUrl: sItem.querySelector('.s-youtube').value, requireVideo: sItem.querySelector('.s-require-video').checked, questions: questions });
   });
 
-  const jsonString = JSON.stringify({ sessions: sessions });
   const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
-  
-  const res = await callGAS('saveLessonData', { 
-    courseId: currentCourseId, 
-    week: week, 
-    title: title, 
-    date: date, 
-    isOpen: isOpenValue,  
-    json: jsonString 
-  });
-  
+  const res = await callGAS('saveLessonData', { courseId: currentCourseId, week: week, title: title, date: date, isOpen: isOpenValue, json: JSON.stringify({ sessions: sessions }) });
   alert("保存しました");
   closeEditor();
-  openCourseEdit(currentCourseId, document.getElementById('edit-course-title').innerText);
+  
+  // ▼▼▼ 修正：画面が戻るときに「 の編集」が増殖して誤作動を起こすのを防ぐ ▼▼▼
+  const cleanTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
+  openCourseEdit(currentCourseId, cleanTitle);
+  // ▲▲▲ 修正ここまで ▲▲▲
+  
   btn.disabled = false; btn.innerText = "保存する";
 }
 
-// エディタを閉じる関数
 function closeEditor() {
   document.getElementById('view-quiz-editor').classList.add('hidden');
   document.getElementById('view-course-edit').classList.remove('hidden');
 }
 
 // ==========================================
-// 👨‍🎓 学生用ロジック (新規登録・ログイン・履修)
+// 👨‍🎓 学生用ロジック
 // ==========================================
-let currentStudentEmail = "";
-
-// 画面切り替え用
 function showStuRegForm() {
   document.getElementById('form-student-login').classList.add('hidden');
   document.getElementById('form-student-reg').classList.remove('hidden');
@@ -789,54 +670,33 @@ function backToStudentDash() {
   document.getElementById('student-course-area').classList.remove('hidden');
 }
 
-// 1. 学生新規登録
 async function doStudentRegister() {
-  // ▼▼▼ 修正: 学籍番号(sid)を取得 ▼▼▼
   const sid = document.getElementById('stu-reg-id').value;
   const n = document.getElementById('stu-reg-name').value;
   const e = document.getElementById('stu-reg-email').value;
   const p = document.getElementById('stu-reg-pass').value;
-  
-  // バリデーションに sid を追加
   if(!sid || !n || !e || !p) return alert("全て入力してください");
   
   const btn = event.target; btn.disabled = true; btn.innerText = "通信中...";
-
-  // GASへ studentId を送信するように修正
-  const res = await callGAS('studentRegister', {
-      studentId: sid, // 追加
-      name: n, 
-      email: e, 
-      password: p
-  });
-  
+  const res = await callGAS('studentRegister', { studentId: sid, name: n, email: e, password: p });
   alert(res.message);
   if(res.success) hideStuRegForm();
-  
   btn.disabled = false; btn.innerText = "登録する";
 }
 
-// 2. 学生ログイン
 async function doStudentLogin() {
   const e = document.getElementById('stu-email').value;
   const p = document.getElementById('stu-pass').value;
-  
   const btn = event.target; btn.disabled = true; btn.innerText = "確認中...";
   
   const res = await callGAS('studentLogin', {email: e, password: p});
-  
   if(res.success) {
     currentStudentEmail = res.email;
-    
-    // ▼▼▼ 追加: 名前と学籍番号をグローバル変数に保存 ▼▼▼
     currentStudentName = res.name; 
-    currentStudentId = res.studentId || "未登録"; // GASから返却させる必要あり
-    // ▲▲▲ 追加ここまで ▲▲▲
-
+    currentStudentId = res.studentId || "未登録";
     document.getElementById('student-name-display').innerText = res.name + " さん";
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-student-dash').classList.remove('hidden');
-    
     loadMyCourses();
   } else {
     alert(res.message);
@@ -844,75 +704,56 @@ async function doStudentLogin() {
   btn.disabled = false; btn.innerText = "ログイン";
 }
 
-// 3. 履修講義一覧の取得
 async function loadMyCourses() {
   const div = document.getElementById('student-my-courses');
   div.innerHTML = "<p>読み込み中...</p>";
-  
   const res = await callGAS('getStudentCourses', {email: currentStudentEmail});
-  
   div.innerHTML = "";
   if(res.success && res.list && res.list.length > 0) {
     res.list.forEach(c => {
-      div.innerHTML += `
-        <div class="week-row" style="cursor:pointer;" onclick="openStudentCourse('${c.id}', '${c.name}')">
+      div.innerHTML += `<div class="week-row" style="cursor:pointer;" onclick="openStudentCourse('${c.id}', '${c.name}')">
           <span>📖 <b>${c.name}</b></span>
           <button class="btn-lms btn-secondary" style="width:auto; padding:5px;">入室</button>
         </div>`;
     });
   } else {
-    div.innerHTML = "<p>履修している講義はありません。上のフォームから登録してください。</p>";
+    div.innerHTML = "<p>履修している講義はありません。</p>";
   }
 }
 
-// 4. 新しい講義を履修登録する
 async function doJoinCourse() {
   const id = document.getElementById('join-course-id').value;
   const pass = document.getElementById('join-course-pass').value;
-  if(!id || !pass) return alert("講義IDとパスワードを入力してください");
-
+  if(!id || !pass) return alert("入力してください");
+  
   const btn = event.target; btn.disabled = true; btn.innerText = "登録中...";
-
-  const res = await callGAS('joinCourse', {
-      email: currentStudentEmail, 
-      courseId: id, 
-      coursePass: pass
-  });
-
+  const res = await callGAS('joinCourse', { email: currentStudentEmail, courseId: id, coursePass: pass });
   alert(res.message);
   if(res.success) {
       document.getElementById('join-course-id').value = "";
       document.getElementById('join-course-pass').value = "";
-      loadMyCourses(); // リストを更新
+      loadMyCourses();
   }
   btn.disabled = false; btn.innerText = "履修登録";
 }
 
-// 5. 講義を選択して授業一覧を表示
 async function openStudentCourse(courseId, courseName) {
   document.getElementById('student-course-area').classList.add('hidden');
   document.getElementById('student-lesson-area').classList.remove('hidden');
   document.getElementById('student-course-title').innerText = courseName;
-  
-currentCourseId = courseId;
-
-  // 既存の loadStudentLessons を再利用（引数を渡すように少し修正が必要かもしれません）
+  currentCourseId = courseId;
   await loadStudentLessons(courseId);
 }
 
-// 既存の loadStudentLessons を、引数(id)を受け取れるように修正してください
 async function loadStudentLessons(id) {
   document.getElementById('student-lesson-list').innerHTML = "<p>読み込み中...</p>";
-  document.getElementById('student-quiz-area').classList.add('hidden'); // クイズ画面を隠す
-
+  document.getElementById('student-quiz-area').classList.add('hidden');
   const res = await callGAS('getLessonsForStudent', {id: id});
-  
   const div = document.getElementById('student-lesson-list');
   div.innerHTML = "";
   if(res.success) {
-    const list = res.list;
-    if(list.length === 0) div.innerHTML = "<p>現在公開されている授業はありません。</p>";
-    list.forEach(l => {
+    if(res.list.length === 0) div.innerHTML = "<p>現在公開されている授業はありません。</p>";
+    res.list.forEach(l => {
       if(l.isOpen) {
         div.innerHTML += `<div class="week-row" style="cursor:pointer; border-left:5px solid green;" onclick='startQuiz(${JSON.stringify(l)})'>
           <div><span class="status-open">● 第${l.week}回</span> <b>${l.title}</b></div>
@@ -927,217 +768,121 @@ async function loadStudentLessons(id) {
   }
 }
 
-// ==========================================
-// 🎓 学生用表示・動画コントロール機能（複数セッション対応版）
-// ==========================================
-
-// グローバルに動画プレーヤーを管理する配列
 let currentYTPlayers = [];
-
 function startQuiz(lessonData) {
-  const area = document.getElementById('student-quiz-area');
-  area.classList.remove('hidden');
-  area.scrollIntoView({behavior:'smooth'});
-  
+  document.getElementById('student-quiz-area').classList.remove('hidden');
+  document.getElementById('student-quiz-area').scrollIntoView({behavior:'smooth'});
   document.getElementById('quiz-title').innerText = `第${lessonData.week}回: ${lessonData.title}`;
-  const content = document.getElementById('quiz-content');
-  const result = document.getElementById('quiz-result');
-  result.innerText = "";
   
-  // データ読み込み（互換性対応）
   let sessions = [];
   try { 
     const parsed = JSON.parse(lessonData.quiz); 
-    if (parsed && parsed.sessions) {
-      sessions = parsed.sessions;
-    } else if (Array.isArray(parsed)) {
-      sessions = [{ title: "課題", videoUrl: "", requireVideo: false, questions: parsed }];
-    } else if (parsed && typeof parsed === 'object') {
-      sessions = [{
-        title: "課題", videoUrl: parsed.videoUrl || "", requireVideo: parsed.requireVideo || false, questions: parsed.questions || []
-      }];
-    }
+    if (parsed && parsed.sessions) sessions = parsed.sessions;
   } catch(e) { }
   
-  if(sessions.length === 0) {
-    content.innerHTML = "課題設定がありません。"; return;
-  }
+  if(sessions.length === 0) { document.getElementById('quiz-content').innerHTML = "課題設定がありません。"; return; }
   
-  let html = "";
-  let globalQIndex = 0; // 全セッション通しての通し番号
-
+  let html = "", globalQIndex = 0;
   sessions.forEach((sess, sIdx) => {
-    html += `<div class="session-block" style="margin-bottom: 40px; border: 2px solid #e0f2f1; border-radius: 8px; padding: 20px; background: #fff;">`;
-    html += `<h3 style="margin-top:0; color:#00695c; border-bottom: 2px solid #b2dfdb; padding-bottom:10px;">${sess.title}</h3>`;
-
-    // 動画がある場合
+    html += `<div class="session-block" style="margin-bottom: 40px; border: 2px solid #e0f2f1; border-radius: 8px; padding: 20px; background: #fff;">
+      <h3 style="margin-top:0; color:#00695c; border-bottom: 2px solid #b2dfdb; padding-bottom:10px;">${sess.title}</h3>`;
+    
     if (sess.videoUrl) {
       let videoId = "";
       if (sess.videoUrl.includes("v=")) videoId = sess.videoUrl.split("v=")[1].split("&")[0];
       else if (sess.videoUrl.includes("youtu.be/")) videoId = sess.videoUrl.split("youtu.be/")[1].split("?")[0];
-      
       if (videoId) {
-        html += `
-          <div style="margin-bottom: 20px; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;">
-            <p style="font-weight:bold; font-size:1rem; color:#d32f2f; margin-bottom:10px;">
-              ${sess.requireVideo ? "🎥 以下の動画を最後まで視聴すると、このセッションの問題が表示されます" : "🎥 参考動画"}
-            </p>
-            <p style="font-size:0.85rem; color:#555; margin-top:-5px; margin-bottom:10px;">
-              ※未視聴部分への早送りはできません（スキップすると元の位置に戻ります）
-            </p>
-            <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;">
-              <div id="youtube-player-${sIdx}" data-videoid="${videoId}"></div>
-            </div>
-            ${sess.requireVideo ? `
-              <button id="btn-show-q-${sIdx}" class="btn-lms" style="display:none; margin-top:20px; background:#e65100; padding:10px;" 
-              onclick="document.getElementById('q-area-${sIdx}').style.display='block'; this.style.display='none';">
-                ✅ 視聴完了（問題を表示する）
-              </button>
-            ` : ""}
+        html += `<div style="margin-bottom: 20px; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;">
+            <p style="font-weight:bold; color:#d32f2f;">${sess.requireVideo ? "🎥 動画を最後まで視聴すると、問題が表示されます" : "🎥 参考動画"}</p>
+            <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;"><div id="youtube-player-${sIdx}" data-videoid="${videoId}"></div></div>
+            ${sess.requireVideo ? `<button id="btn-show-q-${sIdx}" class="btn-lms" style="display:none; margin-top:20px; background:#e65100;" onclick="document.getElementById('q-area-${sIdx}').style.display='block'; this.style.display='none';">✅ 視聴完了</button>` : ""}
           </div>`;
       }
     }
 
-    // 問題エリア（視聴必須なら最初は隠す）
     html += `<div id="q-area-${sIdx}" style="${sess.videoUrl && sess.requireVideo ? 'display:none;' : ''}">`;
-    
     sess.questions.forEach((q) => {
-      const i = globalQIndex++; // 採点のためにIDは全問題で連番にする
+      const i = globalQIndex++;
       let qBody = "";
       if (!q.type || q.type === 'choice') {
         let opts = "";
         q.options.forEach((o, oid) => {
-          opts += `<label style="display:flex; flex-direction:row; align-items:center; width:100%; padding:12px 5px; cursor:pointer; border-bottom:1px dashed #ccc; box-sizing:border-box;">
-                      <input type="radio" name="q${i}" value="${oid}" style="width:auto; margin-right:15px; transform:scale(1.2); flex-shrink:0;">
-                      <span style="flex:1; text-align:left; line-height:1.5;">${o}</span>
-                    </label>`;
+          opts += `<label style="display:flex; padding:12px 5px; cursor:pointer; border-bottom:1px dashed #ccc;">
+            <input type="radio" name="q${i}" value="${oid}" style="width:auto; margin-right:15px; transform:scale(1.2);">${o}
+          </label>`;
         });
-        qBody = `<div style="margin-top:5px;">${opts}</div>`;
-      } else if (q.type === 'text') {
-        qBody = `
-          <div style="margin-top:5px;">
-            <textarea id="ans-text-${i}" rows="4" placeholder="回答を入力"
-              oninput="document.getElementById('count-${i}').innerText = this.value.length + '文字'"
-              style="width:100%; resize:vertical;"></textarea>
-            <div style="text-align:right; font-size:0.8rem; color:#666;">現在: <span id="count-${i}">0文字</span></div>
-          </div>`;
+        qBody = `<div>${opts}</div>`;
+      } else {
+        qBody = `<textarea id="ans-text-${i}" rows="4" placeholder="回答を入力" oninput="document.getElementById('count-${i}').innerText = this.value.length + '文字'"></textarea>
+                 <div style="text-align:right; font-size:0.8rem; color:#666;">現在: <span id="count-${i}">0文字</span></div>`;
       }
-
-      html += `
-        <div style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
-          <b>Q${i+1}. ${q.text}</b>
-          ${qBody}
-          <div id="fb-${i}" style="font-size:0.9em; margin-top:10px; padding:10px; background:#f4f4f9; display:none; border-radius:4px;"></div>
-        </div>`;
+      html += `<div style="margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:15px;">
+        <b>Q${i+1}. ${q.text}</b>${qBody}<div id="fb-${i}" style="font-size:0.9em; margin-top:10px; padding:10px; background:#f4f4f9; display:none; border-radius:4px;"></div>
+      </div>`;
     });
-    
-    html += `</div></div>`; // q-area と session-block を閉じる
+    html += `</div></div>`;
   });
   
-  // 全セッションの問題をフラットにまとめて、既存の checkQuiz に渡す
   let flatQuestions = [];
   sessions.forEach(s => flatQuestions.push(...s.questions));
+  html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px;">回答を送信する</button>`;
+  document.getElementById('quiz-content').innerHTML = html;
 
-  html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px; margin-top:10px;">全セッションの回答を送信・確認する</button>`;
-  
-  content.innerHTML = html;
-  
-const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
+  // 下書き復元・自動保存
+  const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
   const savedDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
-
-  // 1. 保存されたデータがあれば画面に復元する
   for (let i = 0; i < globalQIndex; i++) {
-    // 4択問題（ラジオボタン）の復元
     if (savedDraft[`q${i}`] !== undefined) {
       const radio = document.querySelector(`input[name="q${i}"][value="${savedDraft[`q${i}`]}"]`);
       if (radio) radio.checked = true;
     }
-    // 記述式問題（テキストエリア）の復元
     const textarea = document.getElementById(`ans-text-${i}`);
     if (textarea && savedDraft[`text${i}`] !== undefined) {
       textarea.value = savedDraft[`text${i}`];
-      // 文字数カウントも更新
-      const countEl = document.getElementById(`count-${i}`);
-      if (countEl) countEl.innerText = textarea.value.length + "文字";
+      document.getElementById(`count-${i}`).innerText = textarea.value.length + "文字";
     }
   }
 
-  // 2. 学生が入力・選択するたびに自動保存するイベント
-  content.addEventListener('input', (e) => {
+  document.getElementById('quiz-content').oninput = (e) => {
     const currentDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
-    if (e.target.type === 'radio') {
-      currentDraft[e.target.name] = e.target.value; // 例: q0: "2"
-    } else if (e.target.tagName.toLowerCase() === 'textarea') {
-      const idNum = e.target.id.replace('ans-text-', ''); // "ans-text-1" -> "1"
-      currentDraft[`text${idNum}`] = e.target.value;
-    }
+    if (e.target.type === 'radio') currentDraft[e.target.name] = e.target.value;
+    else if (e.target.tagName.toLowerCase() === 'textarea') currentDraft[`text${e.target.id.replace('ans-text-', '')}`] = e.target.value;
     localStorage.setItem(draftKey, JSON.stringify(currentDraft));
-  });
+  };
 
-  // すべての動画プレーヤーをセットアップ
   initMultipleYTPlayers(sessions);
 }
 
-// 複数動画用のAPIセットアップ
 function initMultipleYTPlayers(sessions) {
-  currentYTPlayers.forEach(p => p && p.destroy && p.destroy());
-  currentYTPlayers = [];
-
+  currentYTPlayers.forEach(p => p && p.destroy && p.destroy()); currentYTPlayers = [];
   if (!window.YT || !window.YT.Player) {
-    const tag = document.createElement('script');
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    
+    const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
+    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
     window.onYouTubeIframeAPIReady = function() { setupPlayers(sessions); };
-  } else {
-    setupPlayers(sessions);
-  }
+  } else { setupPlayers(sessions); }
 }
 
-// 各動画の監視タイマーを保持するグローバル変数
 window.videoTrackers = {};
-
 function setupPlayers(sessions) {
   sessions.forEach((sess, sIdx) => {
-    const el = document.getElementById(`youtube-player-${sIdx}`); 
+    const el = document.getElementById(`Youtubeer-${sIdx}`); 
     if (el && el.dataset.videoid) {
       const videoId = el.dataset.videoid;
       const storageKey = `lms_progress_${currentStudentId}_${currentCourseId}_${videoId}`;
-      
-      // 保存された進捗を復元
       let savedMaxTime = parseFloat(localStorage.getItem(storageKey)) || 0;
-      
-      // トラッカーの初期化
-      window.videoTrackers[sIdx] = {
-        interval: null,
-        maxTime: savedMaxTime, // ここまでならスキップOK
-        lastPos: 0             // 直前の再生位置
-      };
+      window.videoTrackers[sIdx] = { interval: null, maxTime: savedMaxTime, lastPos: 0 };
 
-      const player = new YT.Player(`youtube-player-${sIdx}`, { 
+      const player = new YT.Player(`Youtubeer-${sIdx}`, { 
         height: '100%', width: '100%', videoId: videoId,
         playerVars: { 'rel': 0, 'modestbranding': 1 },
         events: {
-          'onReady': (e) => {
-            // 初回、前回保存した位置から再開させたい場合はここ（任意）
-            // e.target.seekTo(savedMaxTime, true);
-          },
           'onStateChange': (event) => {
-            // 動画終了時
             if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
-              const btn = document.getElementById(`btn-show-q-${sIdx}`);
-              if (btn) btn.style.display = 'inline-block';
+              document.getElementById(`btn-show-q-${sIdx}`).style.display = 'inline-block';
               localStorage.setItem(storageKey, player.getDuration());
             }
-            
-            // 再生中(1)またはバッファリング中(3)に監視を開始
-            if (event.data === YT.PlayerState.PLAYING || event.data === 3) {
-              startTracking(player, sIdx, storageKey);
-            } else {
-              // 一時停止(2)や終了(0)時はタイマーを止める
-              stopTracking(sIdx);
-            }
+            if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx, storageKey);
+            else stopTracking(sIdx);
           }
         }
       });
@@ -1146,392 +891,267 @@ function setupPlayers(sessions) {
   });
 }
 
-// 動画の再生位置を監視・制御する関数
 function startTracking(player, idx, storageKey) {
-  // すでにタイマーが動いていたら一旦止めて二重起動を防ぐ
   stopTracking(idx);
-
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
-
-    // 【重要】スキップ検知ロジック
-    // 「現在の時間」が「これまでの最大視聴時間」を2秒以上超えたらスキップとみなす
-    if (currentTime > tracker.maxTime + 2) {
-      // 許可された最大時間へ引き戻す
-      player.seekTo(tracker.maxTime, true);
-    } else {
-      // 正常な再生、または巻き戻して視聴している場合
-      // 現在の場所がこれまでの記録を更新したら保存
-      if (currentTime > tracker.maxTime) {
-        tracker.maxTime = currentTime;
-        localStorage.setItem(storageKey, currentTime);
-      }
-    }
-    // 直前の位置として記録（判定の補助用）
+    if (currentTime > tracker.maxTime + 2) player.seekTo(tracker.maxTime, true);
+    else if (currentTime > tracker.maxTime) { tracker.maxTime = currentTime; localStorage.setItem(storageKey, currentTime); }
     tracker.lastPos = currentTime;
-
-  }, 500); // 0.5秒ごとにチェック
+  }, 500);
 }
-
 function stopTracking(idx) {
-  if (window.videoTrackers[idx] && window.videoTrackers[idx].interval) {
-    clearInterval(window.videoTrackers[idx].interval);
-    window.videoTrackers[idx].interval = null;
-  }
+  if (window.videoTrackers[idx] && window.videoTrackers[idx].interval) { clearInterval(window.videoTrackers[idx].interval); window.videoTrackers[idx].interval = null; }
 }
 
 async function checkQuiz(quizData, week) {
-
-let isAllAnswered = true;
-  let firstUnanswered = -1;
-
+  let isAllAnswered = true, firstUnanswered = -1;
   for (let i = 0; i < quizData.length; i++) {
     const q = quizData[i];
     if (!q.type || q.type === 'choice') {
-      // 4択問題のチェック（ラジオボタンが選択されているか）
-      const sel = document.querySelector(`input[name="q${i}"]:checked`);
-      if (!sel) {
-        isAllAnswered = false;
-        firstUnanswered = i + 1;
-        break;
-      }
-    } else if (q.type === 'text') {
-      // 記述式問題のチェック（空欄のみ、または未入力か）
-      const textarea = document.getElementById(`ans-text-${i}`);
-      if (!textarea || textarea.value.trim() === "") {
-        isAllAnswered = false;
-        firstUnanswered = i + 1;
-        break;
-      }
+      if (!document.querySelector(`input[name="q${i}"]:checked`)) { isAllAnswered = false; firstUnanswered = i + 1; break; }
+    } else {
+      const tx = document.getElementById(`ans-text-${i}`);
+      if (!tx || tx.value.trim() === "") { isAllAnswered = false; firstUnanswered = i + 1; break; }
     }
   }
 
-  // 未回答があればアラートを出して送信処理を中断する
-  if (!isAllAnswered) {
-    alert(`未回答の問題があります（Q${firstUnanswered}）。\nすべての問題に回答してから送信してください。`);
-    return; // ここで処理を止めるため、送信ボタンも消えません
-  }
+  if (!isAllAnswered) return alert(`未回答の問題があります（Q${firstUnanswered}）。`);
 
-  let score = 0;
-  let totalScoreQuestions = 0; // 4択問題の総数
-  
-  let studentAnswers = [];
-  
-  const submitBtn = event.target; 
-  if(submitBtn) submitBtn.style.display = 'none'; 
+  let score = 0, totalScoreQuestions = 0, studentAnswers = [];
+  const submitBtn = event.target; if(submitBtn) submitBtn.style.display = 'none'; 
 
   quizData.forEach((q, i) => {
-    const fb = document.getElementById(`fb-`+i);
-    fb.style.display = 'block'; 
-    
-    const radios = document.getElementsByName(`q${i}`);
-    radios.forEach(r => r.disabled = true);
-    const textarea = document.getElementById(`ans-text-${i}`);
-    if(textarea) {
-        textarea.disabled = true;
-        textarea.style.background = "#f0f0f0"; 
-        textarea.style.border = "none";
-    }
+    const fb = document.getElementById(`fb-${i}`); fb.style.display = 'block'; 
+    document.getElementsByName(`q${i}`).forEach(r => r.disabled = true);
+    const tx = document.getElementById(`ans-text-${i}`);
+    if(tx) { tx.disabled = true; tx.style.background = "#f0f0f0"; }
 
     if (!q.type || q.type === 'choice') {
       totalScoreQuestions++;
       const sel = document.querySelector(`input[name="q${i}"]:checked`);
-      
-      if(sel) {
-        studentAnswers.push(q.options[parseInt(sel.value)]);
-      } else {
-        studentAnswers.push("未回答");
-      }
-
-      if(sel && parseInt(sel.value) === q.answer) {
-        score++;
-        fb.innerHTML = `<span style="color:green; font-weight:bold;">⭕ 正解！</span><br>${q.explanation}`;
-        fb.style.borderLeft = "5px solid green";
-      } else {
-        fb.innerHTML = `<span style="color:red; font-weight:bold;">❌ 不正解...</span><br>${q.explanation}`;
-        fb.style.borderLeft = "5px solid red";
-      }
-      
-    } else if (q.type === 'text') {
-      const val = textarea ? textarea.value : "";
-      
-      studentAnswers.push(val);
-
-      if(val.trim().length > 0) {
-        fb.innerHTML = `<span style="color:#005f73; font-weight:bold;">📝 回答完了</span><br>
-                        <hr style="margin:5px 0; border:0; border-top:1px dashed #ccc;">
-                        <strong>【解答例・解説】</strong><br>${q.explanation}`;
-        fb.style.borderLeft = "5px solid #005f73";
-      } else {
-        fb.innerHTML = `<span style="color:orange; font-weight:bold;">⚠️ 未回答</span><br>
-                        <strong>【解答例・解説】</strong><br>${q.explanation}`;
-        fb.style.borderLeft = "5px solid orange";
-      }
+      studentAnswers.push(sel ? q.options[parseInt(sel.value)] : "未回答");
+      if(sel && parseInt(sel.value) === q.answer) { score++; fb.innerHTML = `<span style="color:green;">⭕ 正解！</span><br>${q.explanation}`; fb.style.borderLeft = "5px solid green"; }
+      else { fb.innerHTML = `<span style="color:red;">❌ 不正解...</span><br>${q.explanation}`; fb.style.borderLeft = "5px solid red"; }
+    } else {
+      studentAnswers.push(tx ? tx.value : "");
+      fb.innerHTML = `📝 回答完了<br><hr><strong>【解答例】</strong><br>${q.explanation}`; fb.style.borderLeft = "5px solid #005f73";
     }
   });
 
-  let resultHtml = "";
-  const today = new Date().toLocaleDateString();
-  
-  // 1. レポートのヘッダー情報（前のバージョンにあったものを復活・整理）
-  resultHtml += `
-    <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px; text-align: left; background: #fff;">
-      <h4 style="margin:0 0 10px 0; border-bottom:1px solid #ccc; padding-bottom:5px;">課題レポート</h4>
-      <p style="margin:5px 0;"><b>学籍番号：</b> ${currentStudentId}</p>
-      <p style="margin:5px 0;"><b>氏名：</b> ${currentStudentName}</p>
-      <p style="margin:5px 0;"><b>実施日：</b> ${today}</p>
-    </div>
-  `;
-
-  // 2. 点数と注意書き
-  if (totalScoreQuestions > 0) {
-    resultHtml += `<div style="font-size:1.2em; font-weight:bold; margin-bottom:10px;">【4択成績】 ${score} / ${totalScoreQuestions} 点</div>`;
-  }
-  resultHtml += `<div style="font-size:0.9em; color:#666;">※記述式は自己採点してください</div>`;
-  
-  // 3. ボタンエリア（ここに hide-on-mobile を適用）
-  resultHtml += `
-    <div style="margin-top:20px; text-align:center; padding-bottom:100px;">
-      <button class="btn-lms hide-on-mobile" onclick="downloadQuizPDF(this)" data-html2canvas-ignore="true" style="background:#ee9b00;">
-        📄 結果をPDFで保存する
-      </button>
-      <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();" data-html2canvas-ignore="true" style="margin-top:10px;">
-        終了して戻る
-      </button>
-    </div>
-  `;
+  let resultHtml = `<div style="border: 2px solid #333; padding: 15px; background: #fff;">
+      <h4>課題レポート</h4><p><b>学籍番号：</b> ${currentStudentId}</p><p><b>氏名：</b> ${currentStudentName}</p>
+    </div>`;
+  if (totalScoreQuestions > 0) resultHtml += `<h3>【4択成績】 ${score} / ${totalScoreQuestions} 点</h3>`;
+  resultHtml += `<button class="btn-lms hide-on-mobile" onclick="downloadQuizPDF(this)" style="background:#ee9b00;">📄 PDFで保存</button>
+                 <button class="btn-lms btn-secondary" onclick="finishQuizAndBack();">終了して戻る</button>`;
   
   document.getElementById('quiz-result').innerHTML = resultHtml;
   document.getElementById('quiz-result').scrollIntoView({behavior:'smooth'});
 
   try {
-    if(submitBtn) {
-       submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue; font-weight:bold; margin-top:10px;">データを送信しています...</p>');
-    }
-    
-    await callGAS('submitAnswers', {
-      courseId: currentCourseId,
-      week: week,
-      studentId: currentStudentId,
-      studentName: currentStudentName,
-      score: `${score}/${totalScoreQuestions}`,
-      answersJson: JSON.stringify(studentAnswers)
-    });
-    
-    const msgEl = document.getElementById('submit-msg');
-    if(msgEl) msgEl.innerText = "✅ 回答を先生に送信しました！";
-
-const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${week}`;
-    localStorage.removeItem(draftKey);
-    
+    if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue;">データを送信しています...</p>');
+    await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
+    document.getElementById('submit-msg').innerText = "✅ 送信完了！";
+    localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
   } catch (e) {
-    console.error("回答の保存に失敗しました", e);
-    const msgEl = document.getElementById('submit-msg');
-    if(msgEl) {
-      msgEl.innerText = "❌ 回答の送信に失敗しました。";
-      msgEl.style.color = "red";
-    }
+    document.getElementById('submit-msg').innerText = "❌ 送信に失敗しました。";
   }
 }
 
-
-// PDFダウンロード実行関数
 function downloadQuizPDF(btn) {
-  // 保存する対象のエリア
   const element = document.getElementById('student-quiz-area');
-  
-  // ファイル名
-  const courseTitle = document.getElementById('student-course-title').innerText;
-  const quizTitle = document.getElementById('quiz-title').innerText;
-  const fileName = `${courseTitle}_${quizTitle}_結果.pdf`;
-
-  // ★重要追加：スマホのフリーズ対策。動画(iframe)を一時的に非表示にする
+  const fileName = `${document.getElementById('student-course-title').innerText}_結果.pdf`;
   const iframes = element.querySelectorAll('iframe');
   iframes.forEach(iframe => iframe.style.display = 'none');
 
-  // オプション設定
-  const opt = {
-    margin:       10,
-    filename:     fileName,
-    image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        scrollY: 0 
-    },
-    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  };
+  const opt = { margin: 10, filename: fileName, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+  btn.innerText = "PDF作成中..."; btn.disabled = true;
 
-  // ボタンの表示変更
-  const originalText = btn.innerText;
-  btn.innerText = "PDF作成中...";
-  btn.disabled = true;
-
-  // PDF生成実行
   html2pdf().set(opt).from(element).save().then(() => {
-    btn.innerText = originalText;
-    btn.disabled = false;
-    // ★重要追加：PDF生成が終わったら動画を再表示する
-    iframes.forEach(iframe => iframe.style.display = 'block');
-  }).catch((err) => {
-    alert("PDF作成に失敗しました: " + err);
-    btn.innerText = originalText;
-    btn.disabled = false;
-    // ★重要追加：エラー時も動画を再表示する
-    iframes.forEach(iframe => iframe.style.display = 'block');
+    btn.innerText = "📄 PDFで保存"; btn.disabled = false; iframes.forEach(iframe => iframe.style.display = 'block');
   });
 }
 
 // ==========================================
-// 🛠 管理者用 JSロジック (検索・紐付け対応版)
+// 🛠 管理者用 JSロジック
 // ==========================================
-
-// データを保持しておくグローバル変数
-let adminAllStudents = [];
-let adminAllTeachers = [];
-let adminAllCourses = [];
-let adminAllEnrollments = [];
-
-// コースIDからコース名を引くための辞書
-let courseNameMap = {}; 
+let adminAllStudents = [], adminAllTeachers = [], adminAllCourses = [], adminAllEnrollments = [], courseNameMap = {}; 
 
 async function doAdminLogin() {
   const p = document.getElementById('admin-pass').value;
-  if(!p) return alert("パスワードを入力してください");
-
+  if(!p) return alert("入力してください");
   const btn = event.target; btn.disabled = true; btn.innerText = "認証中...";
-
-  // GASへ問い合わせ
   const res = await callGAS('adminLogin', {password: p});
-
   if(res.success) {
     document.getElementById('view-login').classList.add('hidden');
     document.getElementById('view-admin-dash').classList.remove('hidden');
-    
-    // データをグローバル変数に保存
-    adminAllStudents = res.students;
-    adminAllTeachers = res.teachers;
-    adminAllCourses = res.courses;
-    // GAS側で enrollments を返していないと undefined になるため空配列で防衛
-    adminAllEnrollments = res.enrollments || []; 
-
-    // マッピング処理（コースID → コース名 の辞書を作る）
-    courseNameMap = {};
-    adminAllCourses.forEach(c => {
-      courseNameMap[c.id] = c.name;
-    });
-
-    // 初期表示
-    filterAdminStudents(); // 全件表示
-    filterAdminTeachers(); // 全件表示
-    renderAdminCourses();  // 講義マスタ表示
-
-  } else {
-    alert(res.message);
-  }
+    adminAllStudents = res.students; adminAllTeachers = res.teachers; adminAllCourses = res.courses; adminAllEnrollments = res.enrollments || [];
+    adminAllCourses.forEach(c => { courseNameMap[c.id] = c.name; });
+    filterAdminStudents(); filterAdminTeachers(); renderAdminCourses();
+  } else { alert(res.message); }
   btn.disabled = false; btn.innerText = "管理者としてログイン";
 }
 
-// --- 学生の検索＆表示 ---
 function filterAdminStudents() {
-  const input = document.getElementById('search-student');
-  if(!input) return; // エラー防止
-  const keyword = input.value.toLowerCase();
-  
-  // 1. 検索フィルタリング
-  const filtered = adminAllStudents.filter(s => {
-    const id = String(s.id).toLowerCase();
-    const name = s.name.toLowerCase();
-    return id.includes(keyword) || name.includes(keyword);
-  });
-
-  // 2. 件数更新
+  const keyword = document.getElementById('search-student').value.toLowerCase();
+  const filtered = adminAllStudents.filter(s => String(s.id).toLowerCase().includes(keyword) || s.name.toLowerCase().includes(keyword));
   document.getElementById('count-students').innerText = filtered.length;
-
-  // 3. テーブル描画
-  const tbody = document.getElementById('list-students');
-  tbody.innerHTML = "";
-  
+  const tbody = document.getElementById('list-students'); tbody.innerHTML = "";
   filtered.forEach(s => {
-    // この学生が履修している講義を探す
-    // (EnrollmentのstudentEmail と Studentのemail が一致するもの)
     const myEnrollments = adminAllEnrollments.filter(e => e.studentEmail === s.email);
-    
-    // コースIDを名前に変換してリスト化
-    const courseNames = myEnrollments.map(e => {
-      return courseNameMap[e.courseId] ? `・${courseNameMap[e.courseId]}` : `・不明(${e.courseId})`;
-    }).join('<br>');
-
-    tbody.innerHTML += `<tr>
-      <td>${s.id}</td>
-      <td style="font-weight:bold;">${s.name}</td>
-      <td>${s.email}</td>
-      <td style="font-size:0.85rem; color:#555;">${courseNames || '<span style="color:#ccc;">なし</span>'}</td>
-    </tr>`;
+    const courseNames = myEnrollments.map(e => courseNameMap[e.courseId] ? `・${courseNameMap[e.courseId]}` : `・不明(${e.courseId})`).join('<br>');
+    tbody.innerHTML += `<tr><td>${s.id}</td><td><b>${s.name}</b></td><td>${s.email}</td><td>${courseNames || 'なし'}</td></tr>`;
   });
 }
 
-// --- 教員の検索＆表示 ---
 function filterAdminTeachers() {
-  const input = document.getElementById('search-teacher');
-  if(!input) return;
-  const keyword = input.value.toLowerCase();
-
-  // 1. 検索フィルタリング
-  const filtered = adminAllTeachers.filter(t => {
-    return t.name.toLowerCase().includes(keyword);
-  });
-
-  // 2. 件数更新
+  const keyword = document.getElementById('search-teacher').value.toLowerCase();
+  const filtered = adminAllTeachers.filter(t => t.name.toLowerCase().includes(keyword));
   document.getElementById('count-teachers').innerText = filtered.length;
-
-  // 3. テーブル描画
-  const tbody = document.getElementById('list-teachers');
-  tbody.innerHTML = "";
-
+  const tbody = document.getElementById('list-teachers'); tbody.innerHTML = "";
   filtered.forEach(t => {
-    // この教員が担当している講義を探す
-    // (Courseのteacher(Email) と Teacherのemail が一致するもの)
     const myCourses = adminAllCourses.filter(c => c.teacher === t.email);
-    
     const courseNames = myCourses.map(c => `・${c.name}`).join('<br>');
-
-    tbody.innerHTML += `<tr>
-      <td style="font-weight:bold;">${t.name}</td>
-      <td>${t.email}</td>
-      <td style="font-size:0.85rem; color:#555;">${courseNames || '<span style="color:#ccc;">なし</span>'}</td>
-    </tr>`;
+    tbody.innerHTML += `<tr><td><b>${t.name}</b></td><td>${t.email}</td><td>${courseNames || 'なし'}</td></tr>`;
   });
 }
 
-// --- 講義マスタの表示（検索なし、シンプル表示） ---
 function renderAdminCourses() {
-  const tbody = document.getElementById('list-courses');
-  tbody.innerHTML = "";
+  const tbody = document.getElementById('list-courses'); tbody.innerHTML = "";
   document.getElementById('count-courses').innerText = adminAllCourses.length;
-  
-  adminAllCourses.forEach(c => {
-    tbody.innerHTML += `<tr>
-      <td>${c.id}</td>
-      <td>${c.name}</td>
-      <td>${c.teacher}</td>
-    </tr>`;
-  });
+  adminAllCourses.forEach(c => { tbody.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.teacher}</td></tr>`; });
 }
 
 function finishQuizAndBack() {
-  // 動画プレイヤーが再生中のままにならないよう破棄する
-  if (typeof currentYTPlayers !== 'undefined') {
-    currentYTPlayers.forEach(p => p && p.destroy && p.destroy());
-    currentYTPlayers = [];
-  }
-  
-  // クイズエリアを非表示にする
+  currentYTPlayers.forEach(p => p && p.destroy && p.destroy()); currentYTPlayers = [];
   document.getElementById('student-quiz-area').classList.add('hidden');
-  
-  // 画面の一番上へスムーズにスクロールして戻す
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==========================================
+// 📊 提出状況確認・CSV出力機能 (教員用単一回)
+// ==========================================
+let currentSubmissionsData = [];
+
+async function openSubmissions(week) { // ← 引数を week だけにする
+  document.getElementById('view-course-edit').classList.add('hidden');
+  document.getElementById('view-submissions').classList.remove('hidden');
+  
+  // ▼▼▼ タイトルを裏のデータ(currentLessonsData)から安全に取得する処理を追加 ▼▼▼
+  const lesson = currentLessonsData[week] || {};
+  const title = lesson.title || "未設定";
+  // ▲▲▲ 追加ここまで ▲▲▲
+
+  const courseTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
+  document.getElementById('submissions-title').innerText = `${courseTitle} - 第${week}回：${title}`;
+  document.getElementById('list-submissions').innerHTML = "<tr><td colspan='6'>データ取得中...</td></tr>";
+  const res = await callGAS('getSubmissions', { courseId: currentCourseId, week: week });
+  const tbody = document.getElementById('list-submissions'); tbody.innerHTML = "";
+  
+  if (res.success && res.list && res.list.length > 0) {
+    res.list.sort((a, b) => String(a.studentId || "").localeCompare(String(b.studentId || ""), undefined, { numeric: true }));
+    currentSubmissionsData = res.list;
+    res.list.forEach((sub, idx) => {
+      const answersText = Array.isArray(sub.answers) ? sub.answers.join(" / ") : (sub.answers || "なし");
+      tbody.innerHTML += `<tr>
+        <td style="text-align:center; font-weight:bold; color:#666;">${idx + 1}</td>
+        <td>${sub.studentId || "-"}</td><td><b>${sub.studentName || "-"}</b></td><td>${sub.timestamp || "-"}</td><td><b>${sub.score || "-"}</b></td>
+        <td><button class="btn-lms btn-secondary" style="padding: 2px 8px;" onclick='alert("【得点】\\n${sub.score || "-"}\\n\\n【回答内容】\\n" + ${JSON.stringify(answersText)})'>詳細</button></td>
+      </tr>`;
+    });
+  } else { currentSubmissionsData = []; tbody.innerHTML = "<tr><td colspan='6'>まだ提出がありません。</td></tr>"; }
+}
+
+function backToCourseEdit() {
+  document.getElementById('view-submissions').classList.add('hidden');
+  document.getElementById('view-course-edit').classList.remove('hidden');
+}
+
+function downloadSubmissionsCSV() {
+  if (currentSubmissionsData.length === 0) return alert("データがありません");
+  let csvContent = "\uFEFF学籍番号,氏名,提出日時,得点,回答内容\n";
+  currentSubmissionsData.forEach(sub => {
+    csvContent += `${escapeCSV(sub.studentId)},${escapeCSV(sub.studentName)},${escapeCSV(sub.timestamp)},${escapeCSV(sub.score)},${escapeCSV(Array.isArray(sub.answers) ? sub.answers.join(" / ") : sub.answers)}\n`;
+  });
+  const link = document.createElement("a");
+  link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })));
+  link.setAttribute("download", `${document.getElementById('submissions-title').innerText}.csv`);
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+}
+
+function escapeCSV(str) { return '"' + String(str || "").replace(/"/g, '""') + '"'; }
+
+// ==========================================
+// 📊 全15回 提出状況一括確認・CSV出力 (教員用)
+// ==========================================
+let currentAllSubmissionsData = [];
+
+async function openAllSubmissions() {
+  document.getElementById('view-course-edit').classList.add('hidden');
+  document.getElementById('view-all-submissions').classList.remove('hidden');
+  const courseTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
+  document.getElementById('all-submissions-title').innerText = `${courseTitle} - 全15回 提出状況一覧`;
+  document.getElementById('list-all-submissions').innerHTML = "<tr><td colspan='19'>全回の提出データをスキャン中...</td></tr>";
+
+  const res = await callGAS('getAllSubmissions', { courseId: currentCourseId });
+  const tbody = document.getElementById('list-all-submissions'); tbody.innerHTML = "";
+  
+  if (res.success && res.list && res.list.length > 0) {
+    res.list.sort((a, b) => String(a.studentId || "").localeCompare(String(b.studentId || ""), undefined, { numeric: true }));
+    currentAllSubmissionsData = res.list;
+    
+    res.list.forEach((student, idx) => {
+      let totalEarned = 0, totalFull = 0, weeksHtml = "";
+      for (let w = 1; w <= 15; w++) {
+        const score = student.scores[w];
+        if (score === "未提出") weeksHtml += `<td style="color:#c0392b; background:#fdf2f2; text-align:center;">未提出</td>`;
+        else {
+          weeksHtml += `<td style="color:#005f73; font-weight:bold; background:#e8f6f3; text-align:center;">${score}</td>`;
+          if (typeof score === 'string' && score.includes('/')) {
+            const parts = score.split('/');
+            totalEarned += parseInt(parts[0], 10) || 0; totalFull += parseInt(parts[1], 10) || 0;
+          }
+        }
+      }
+      tbody.innerHTML += `<tr>
+        <td style="text-align:center; font-weight:bold; color:#666;">${idx + 1}</td>
+        <td>${student.studentId || "-"}</td><td><b>${student.studentName || "-"}</b></td>
+        <td style="color:#005f73; font-weight:bold; background:#e0f2f1; text-align:center; border: 2px solid #005f73;">${totalFull > 0 ? totalEarned+'/'+totalFull : totalEarned}</td>
+        ${weeksHtml}
+      </tr>`;
+    });
+  } else { currentAllSubmissionsData = []; tbody.innerHTML = "<tr><td colspan='19'>提出データがありません。</td></tr>"; }
+}
+
+function backToCourseEditFromAll() {
+  document.getElementById('view-all-submissions').classList.add('hidden');
+  document.getElementById('view-course-edit').classList.remove('hidden');
+}
+
+function downloadAllSubmissionsCSV() {
+  if (currentAllSubmissionsData.length === 0) return alert("データがありません");
+  let csvContent = "\uFEFF学籍番号,氏名,合計得点,第1回,第2回,第3回,第4回,第5回,第6回,第7回,第8回,第9回,第10回,第11回,第12回,第13回,第14回,第15回\n";
+  
+  currentAllSubmissionsData.forEach(student => {
+    let totalEarned = 0, totalFull = 0;
+    for (let w = 1; w <= 15; w++) {
+      const score = student.scores[w];
+      if (score !== "未提出" && typeof score === 'string' && score.includes('/')) {
+        const parts = score.split('/');
+        totalEarned += parseInt(parts[0], 10) || 0; totalFull += parseInt(parts[1], 10) || 0;
+      }
+    }
+    let rowStr = `${escapeCSV(student.studentId)},${escapeCSV(student.studentName)},${escapeCSV(totalFull > 0 ? totalEarned+'/'+totalFull : totalEarned)}`;
+    for (let w = 1; w <= 15; w++) { rowStr += `,${escapeCSV(student.scores[w])}`; }
+    csvContent += rowStr + "\n";
+  });
+  
+  const link = document.createElement("a");
+  link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })));
+  link.setAttribute("download", `${document.getElementById('edit-course-title').innerText.replace(" の編集", "")}_一括提出状況.csv`);
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
 }
 </script>
 </body>
