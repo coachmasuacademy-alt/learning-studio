@@ -179,23 +179,24 @@
       </div>
     </div>
 
-    <div id="view-all-submissions" class="hidden" style="max-width: 100%; margin: 20px;">
-      <div class="card" style="max-width: 1200px; margin: 0 auto;">
+    <div id="view-all-submissions" class="hidden" style="position: fixed; top: 50px; left: 0; width: 100vw; height: calc(100vh - 50px); background: #f4f4f9; z-index: 999; padding: 20px; box-sizing: border-box; overflow-y: auto;">
+      <div class="card" style="max-width: 100%; margin: 0 auto; box-sizing: border-box;">
         <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToCourseEditFromAll()">← 戻る</button>
         <h2 id="all-submissions-title" style="margin-top:0;">全回提出状況一覧</h2>
         <button class="btn-lms" style="background:#27ae60; margin-bottom: 15px; width:auto;" onclick="downloadAllSubmissionsCSV()">📥 全回状況をCSVで出力</button>
         
-        <div style="overflow-x:auto; max-height: 500px; overflow-y: auto;">
-          <table class="admin-table" style="font-size: 0.8rem; min-width: 1000px;">
-            <thead style="position: sticky; top: 0; z-index: 10; background: #eee;">
+        <div style="overflow-x: auto; max-height: 70vh; overflow-y: auto; border: 1px solid #ccc; background: #fff;">
+          <table class="admin-table" style="font-size: 0.8rem; min-width: 1600px; width: 100%; border-collapse: separate; border-spacing: 0;">
+            <thead style="position: sticky; top: 0; z-index: 20; background: #eee; box-shadow: 0 2px 2px rgba(0,0,0,0.1);">
               <tr>
-                <th style="min-width: 40px; text-align: center;">No.</th>
-                <th style="min-width: 80px;">学籍番号</th>
-                <th style="min-width: 100px;">氏名</th>
-                <th style="min-width: 90px; color: #005f73;">合計得点</th>
-                <th>第1回</th><th>第2回</th><th>第3回</th><th>第4回</th><th>第5回</th>
-                <th>第6回</th><th>第7回</th><th>第8回</th><th>第9回</th><th>第10回</th>
-                <th>第11回</th><th>第12回</th><th>第13回</th><th>第14回</th><th>第15回</th>
+                <th style="position: sticky; left: 0; z-index: 30; background: #eee; width: 40px; min-width: 40px; text-align: center; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">No.</th>
+                <th style="position: sticky; left: 40px; z-index: 30; background: #eee; width: 90px; min-width: 90px; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">学籍番号</th>
+                <th style="position: sticky; left: 130px; z-index: 30; background: #eee; width: 140px; min-width: 140px; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">氏名</th>
+                <th style="min-width: 80px; color: #005f73; border-bottom: 1px solid #ccc;">合計得点</th>
+                <th style="min-width: 60px; border-bottom: 1px solid #ccc;">第1回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第2回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第3回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第4回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第5回</th>
+                <th style="min-width: 60px; border-bottom: 1px solid #ccc;">第6回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第7回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第8回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第9回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第10回</th>
+                <th style="min-width: 60px; border-bottom: 1px solid #ccc;">第11回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第12回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第13回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第14回</th><th style="min-width: 60px; border-bottom: 1px solid #ccc;">第15回</th>
+                <th style="position: sticky; right: 0; z-index: 30; background: #eee; min-width: 60px; text-align: center; border-left: 2px solid #aaa; border-bottom: 1px solid #ccc;">操作</th>
               </tr>
             </thead>
             <tbody id="list-all-submissions"></tbody>
@@ -326,7 +327,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxRPQuseTn6VgcPReP1PSHQ5zO_C-oWZthmsgF-hYhGSiG3PyMNrMQJpFLjWMmNcW30ng/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz5SFPFWLrhfQgn37V2vSoJPvJXEjccDLNCRbFaagk8A2h_ZPeKi24fO3vgK77gYkQQjw/exec";
 
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
@@ -417,17 +418,28 @@ async function doTeacherLogin() {
 }
 
 async function loadTeacherCourses() {
-  document.getElementById('teacher-course-list').innerHTML = "<p>読み込み中...</p>";
-  const res = await callGAS('getTeacherCourses', {email: currentTeacherEmail});
   const div = document.getElementById('teacher-course-list');
-  div.innerHTML = "";
-  if(res.success && res.list) {
-    res.list.forEach(c => {
-      div.innerHTML += `<div class="week-row">
-        <span><b>${c.name}</b> (ID: ${c.id})</span>
-        <button class="btn-lms btn-secondary" style="width:auto;" onclick="openCourseEdit('${c.id}', '${c.name}')">編集</button>
-      </div>`;
-    });
+  div.innerHTML = "<p>講義データを読み込み中...</p>";
+  
+  const res = await callGAS('getTeacherCourses', {email: currentTeacherEmail});
+  
+  div.innerHTML = ""; // 一旦クリア
+  
+  if (res && res.success) {
+    if (res.list && res.list.length > 0) {
+      res.list.forEach(c => {
+        // 安全に文字列をエスケープして関数に渡す
+        const cName = String(c.name).replace(/'/g, "\\'");
+        div.innerHTML += `<div class="week-row">
+          <span><b>${c.name}</b> (ID: ${c.id})</span>
+          <button class="btn-lms btn-secondary" style="width:auto;" onclick="openCourseEdit('${c.id}', '${cName}')">編集</button>
+        </div>`;
+      });
+    } else {
+      div.innerHTML = "<p>登録されている講義はありません。</p>";
+    }
+  } else {
+    div.innerHTML = `<p style="color:red;">データの取得に失敗しました: ${res.message || '不明なエラー'}</p>`;
   }
 }
 
@@ -748,20 +760,47 @@ async function openStudentCourse(courseId, courseName) {
 async function loadStudentLessons(id) {
   document.getElementById('student-lesson-list').innerHTML = "<p>読み込み中...</p>";
   document.getElementById('student-quiz-area').classList.add('hidden');
-  const res = await callGAS('getLessonsForStudent', {id: id});
+  
+  // 自分の学籍番号も送って提出済みかチェックしてもらう
+  const res = await callGAS('getLessonsForStudent', {id: id, studentId: currentStudentId});
+  
   const div = document.getElementById('student-lesson-list');
   div.innerHTML = "";
   if(res.success) {
     if(res.list.length === 0) div.innerHTML = "<p>現在公開されている授業はありません。</p>";
+    
     res.list.forEach(l => {
+      // ▼ 追加：公開日を常に表示するためのテキスト
+      const dateHtml = `<small style="color:#666; font-size:0.8rem; margin-left:10px;">公開日: ${l.openDateStr}</small>`;
+      
       if(l.isOpen) {
-        div.innerHTML += `<div class="week-row" style="cursor:pointer; border-left:5px solid green;" onclick='startQuiz(${JSON.stringify(l)})'>
-          <div><span class="status-open">● 第${l.week}回</span> <b>${l.title}</b></div>
-          <button class="btn-lms" style="width:auto;">課題へ</button>
+        // 提出状況によるボタンの切り替え
+        const btnClass = l.isSubmitted ? "btn-lms btn-secondary" : "btn-lms";
+        const btnText = l.isSubmitted ? "復習" : "課題へ";
+        const borderStyle = l.isSubmitted ? "border-left:5px solid #7f8c8d;" : "border-left:5px solid green;";
+        
+        // ▼ 追加：提出済みの場合は「✅ 提出済み」の緑色のバッジを表示する
+        const submittedBadge = l.isSubmitted 
+          ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.75rem; margin-left:10px;">✅ 提出済み</span>` 
+          : "";
+        
+        div.innerHTML += `<div class="week-row" style="cursor:pointer; ${borderStyle}" onclick='startQuiz(${JSON.stringify(l)})'>
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+            <span class="status-open" style="margin-right:5px;">● 第${l.week}回</span> 
+            <b>${l.title}</b>
+            ${dateHtml}
+            ${submittedBadge}
+          </div>
+          <button class="${btnClass}" style="width:auto; min-width:70px;">${btnText}</button>
         </div>`;
       } else {
+        // 非公開の場合の表示（こちらにも公開日を綺麗に並べる）
         div.innerHTML += `<div class="week-row" style="background:#eee; color:#999;">
-          <div>🔒 第${l.week}回 ${l.title || ""}</div><small>公開日: ${l.openDateStr}</small>
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:5px;">
+            <span style="margin-right:5px;">🔒 第${l.week}回</span> 
+            <span>${l.title || ""}</span>
+            ${dateHtml}
+          </div>
         </div>`;
       }
     });
@@ -825,7 +864,15 @@ function startQuiz(lessonData) {
   
   let flatQuestions = [];
   sessions.forEach(s => flatQuestions.push(...s.questions));
-  html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px;">回答を送信する</button>`;
+  
+  // ▼▼▼ 修正：スプレッドシートにデータが存在する場合(isSubmitted)でボタンを切り替える ▼▼▼
+  if (lessonData.isSubmitted) {
+    // 提出済みの場合は、押せないグレーのボタンを表示
+    html += `<button class="btn-lms" disabled style="background:#95a5a6; cursor:not-allowed; font-size:1.2rem; padding:15px; margin-top:10px;">✅ 提出済みです</button>`;
+  } else {
+    // 未提出の場合は、通常の送信ボタンを表示
+    html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px; margin-top:10px;">回答を送信する</button>`;
+  }
   document.getElementById('quiz-content').innerHTML = html;
 
   // 下書き復元・自動保存
@@ -1114,9 +1161,10 @@ let currentAllSubmissionsData = [];
 async function openAllSubmissions() {
   document.getElementById('view-course-edit').classList.add('hidden');
   document.getElementById('view-all-submissions').classList.remove('hidden');
+  
   const courseTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
   document.getElementById('all-submissions-title').innerText = `${courseTitle} - 全15回 提出状況一覧`;
-  document.getElementById('list-all-submissions').innerHTML = "<tr><td colspan='19'>全回の提出データをスキャン中...</td></tr>";
+  document.getElementById('list-all-submissions').innerHTML = "<tr><td colspan='20'>全回の提出データをスキャン中...</td></tr>";
 
   const res = await callGAS('getAllSubmissions', { courseId: currentCourseId });
   const tbody = document.getElementById('list-all-submissions'); tbody.innerHTML = "";
@@ -1129,23 +1177,47 @@ async function openAllSubmissions() {
       let totalEarned = 0, totalFull = 0, weeksHtml = "";
       for (let w = 1; w <= 15; w++) {
         const score = student.scores[w];
-        if (score === "未提出") weeksHtml += `<td style="color:#c0392b; background:#fdf2f2; text-align:center;">未提出</td>`;
-        else {
-          weeksHtml += `<td style="color:#005f73; font-weight:bold; background:#e8f6f3; text-align:center;">${score}</td>`;
+        if (score === "未提出") {
+          weeksHtml += `<td style="color:#c0392b; background:#fdf2f2; text-align:center; border-bottom:1px solid #ccc;">未提出</td>`;
+        } else {
+          weeksHtml += `<td style="color:#005f73; font-weight:bold; background:#e8f6f3; text-align:center; border-bottom:1px solid #ccc;">${score}</td>`;
           if (typeof score === 'string' && score.includes('/')) {
             const parts = score.split('/');
             totalEarned += parseInt(parts[0], 10) || 0; totalFull += parseInt(parts[1], 10) || 0;
           }
         }
       }
+      
       tbody.innerHTML += `<tr>
-        <td style="text-align:center; font-weight:bold; color:#666;">${idx + 1}</td>
-        <td>${student.studentId || "-"}</td><td><b>${student.studentName || "-"}</b></td>
-        <td style="color:#005f73; font-weight:bold; background:#e0f2f1; text-align:center; border: 2px solid #005f73;">${totalFull > 0 ? totalEarned+'/'+totalFull : totalEarned}</td>
+        <td style="position: sticky; left: 0; z-index: 10; background: #fff; text-align:center; font-weight:bold; color:#666; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">${idx + 1}</td>
+        <td style="position: sticky; left: 40px; z-index: 10; background: #fff; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">${student.studentId || "-"}</td>
+        <td style="position: sticky; left: 130px; z-index: 10; background: #fff; font-weight:bold; border-right: 2px solid #aaa; border-bottom: 1px solid #ccc;">${student.studentName || "-"}</td>
+        <td style="color:#005f73; font-weight:bold; background:#e0f2f1; text-align:center; border-bottom: 1px solid #ccc;">${totalFull > 0 ? totalEarned+'/'+totalFull : totalEarned}</td>
         ${weeksHtml}
+        <td style="position: sticky; right: 0; z-index: 10; background: #fff; text-align:center; border-left: 2px solid #aaa; border-bottom: 1px solid #ccc;">
+          <button class="btn-lms" style="background:#e74c3c; padding: 4px 8px; font-size: 0.75rem;" onclick="removeStudentEnrollment('${student.email}', '${student.studentName}')">除外</button>
+        </td>
       </tr>`;
     });
-  } else { currentAllSubmissionsData = []; tbody.innerHTML = "<tr><td colspan='19'>提出データがありません。</td></tr>"; }
+  } else { 
+    currentAllSubmissionsData = []; 
+    tbody.innerHTML = "<tr><td colspan='20'>提出データがありません。</td></tr>"; 
+  }
+}
+
+// ▼▼▼ 追加：名簿から学生を除外（履修解除）する処理 ▼▼▼
+async function removeStudentEnrollment(email, studentName) {
+  if (!confirm(`【確認】\n${studentName} さん（紐付くEmail: ${email}）の履修登録を解除しますか？\n※この行のアカウントだけが名簿から除外されます。`)) {
+    return;
+  }
+  
+  const res = await callGAS('removeEnrollment', { courseId: currentCourseId, email: email });
+  if (res.success) {
+    alert("名簿から除外しました。");
+    openAllSubmissions(); // 画面をリロードして一覧を更新
+  } else {
+    alert(res.message);
+  }
 }
 
 function backToCourseEditFromAll() {
