@@ -831,6 +831,7 @@ function startQuiz(lessonData) {
       if (sess.videoUrl.includes("v=")) videoId = sess.videoUrl.split("v=")[1].split("&")[0];
       else if (sess.videoUrl.includes("youtu.be/")) videoId = sess.videoUrl.split("youtu.be/")[1].split("?")[0];
       if (videoId) {
+        // ▼ 修正: 動画表示枠のIDを 'youtube-player-X' に統一
         html += `<div style="margin-bottom: 20px; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;">
             <p style="font-weight:bold; color:#d32f2f;">${sess.requireVideo ? "🎥 動画を最後まで視聴すると、問題が表示されます" : "🎥 参考動画"}</p>
             <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;"><div id="youtube-player-${sIdx}" data-videoid="${videoId}"></div></div>
@@ -865,17 +866,13 @@ function startQuiz(lessonData) {
   let flatQuestions = [];
   sessions.forEach(s => flatQuestions.push(...s.questions));
   
-  // ▼▼▼ 修正：スプレッドシートにデータが存在する場合(isSubmitted)でボタンを切り替える ▼▼▼
   if (lessonData.isSubmitted) {
-    // 提出済みの場合は、押せないグレーのボタンを表示
     html += `<button class="btn-lms" disabled style="background:#95a5a6; cursor:not-allowed; font-size:1.2rem; padding:15px; margin-top:10px;">✅ 提出済みです</button>`;
   } else {
-    // 未提出の場合は、通常の送信ボタンを表示
     html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px; margin-top:10px;">回答を送信する</button>`;
   }
   document.getElementById('quiz-content').innerHTML = html;
 
-  // 下書き復元・自動保存
   const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
   const savedDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
   for (let i = 0; i < globalQIndex; i++) {
@@ -897,35 +894,44 @@ function startQuiz(lessonData) {
     localStorage.setItem(draftKey, JSON.stringify(currentDraft));
   };
 
-  initMultipleYTPlayers(sessions);
+  // ▼ 修正: タイマー等で少し待ってからプレーヤーを初期化する（APIの読み込みラグ対策）
+  setTimeout(() => {
+    initMultipleYTPlayers(sessions);
+  }, 100);
 }
 
 function initMultipleYTPlayers(sessions) {
   currentYTPlayers.forEach(p => p && p.destroy && p.destroy()); currentYTPlayers = [];
   if (!window.YT || !window.YT.Player) {
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
-    document.getElementsByTagName('script')[0].parentNode.insertBefore(tag, document.getElementsByTagName('script')[0]);
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     window.onYouTubeIframeAPIReady = function() { setupPlayers(sessions); };
-  } else { setupPlayers(sessions); }
+  } else { 
+    setupPlayers(sessions); 
+  }
 }
 
 window.videoTrackers = {};
 function setupPlayers(sessions) {
   sessions.forEach((sess, sIdx) => {
-    const el = document.getElementById(`Youtubeer-${sIdx}`); 
+    // ▼ 修正: IDの取得先も 'youtube-player-X' に統一
+    const el = document.getElementById(`youtube-player-${sIdx}`);
     if (el && el.dataset.videoid) {
       const videoId = el.dataset.videoid;
       const storageKey = `lms_progress_${currentStudentId}_${currentCourseId}_${videoId}`;
       let savedMaxTime = parseFloat(localStorage.getItem(storageKey)) || 0;
       window.videoTrackers[sIdx] = { interval: null, maxTime: savedMaxTime, lastPos: 0 };
 
-      const player = new YT.Player(`Youtubeer-${sIdx}`, { 
+      // ▼ 修正: YT.Player の第一引数も 'youtube-player-X' に統一
+      const player = new YT.Player(`youtube-player-${sIdx}`, { 
         height: '100%', width: '100%', videoId: videoId,
-        playerVars: { 'rel': 0, 'modestbranding': 1 },
+        playerVars: { 'rel': 0, 'modestbranding': 1, 'playsinline': 1 }, // iOSでのインライン再生も追加
         events: {
           'onStateChange': (event) => {
             if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
-              document.getElementById(`btn-show-q-${sIdx}`).style.display = 'inline-block';
+              const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
+              if(btnShowQ) btnShowQ.style.display = 'inline-block';
               localStorage.setItem(storageKey, player.getDuration());
             }
             if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx, storageKey);
@@ -948,9 +954,15 @@ function startTracking(player, idx, storageKey) {
     tracker.lastPos = currentTime;
   }, 500);
 }
+
 function stopTracking(idx) {
-  if (window.videoTrackers[idx] && window.videoTrackers[idx].interval) { clearInterval(window.videoTrackers[idx].interval); window.videoTrackers[idx].interval = null; }
+  if (window.videoTrackers[idx] && window.videoTrackers[idx].interval) { 
+    clearInterval(window.videoTrackers[idx].interval); 
+    window.videoTrackers[idx].interval = null; 
+  }
 }
+
+
 
 async function checkQuiz(quizData, week) {
   let isAllAnswered = true, firstUnanswered = -1;
