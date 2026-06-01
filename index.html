@@ -326,7 +326,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxj93MW0RqiZ0SQPwz6gGkWEDC4L3T2Ho3d574F3PsNnJc9BrPBPb8XksQ1LLuxAJ6z8A/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxRPQuseTn6VgcPReP1PSHQ5zO_C-oWZthmsgF-hYhGSiG3PyMNrMQJpFLjWMmNcW30ng/exec";
 
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
@@ -1035,18 +1035,17 @@ function finishQuizAndBack() {
 // ==========================================
 let currentSubmissionsData = [];
 
-async function openSubmissions(week) { // ← 引数を week だけにする
+async function openSubmissions(week) {
   document.getElementById('view-course-edit').classList.add('hidden');
   document.getElementById('view-submissions').classList.remove('hidden');
   
-  // ▼▼▼ タイトルを裏のデータ(currentLessonsData)から安全に取得する処理を追加 ▼▼▼
   const lesson = currentLessonsData[week] || {};
   const title = lesson.title || "未設定";
-  // ▲▲▲ 追加ここまで ▲▲▲
-
+  
   const courseTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
   document.getElementById('submissions-title').innerText = `${courseTitle} - 第${week}回：${title}`;
   document.getElementById('list-submissions').innerHTML = "<tr><td colspan='6'>データ取得中...</td></tr>";
+
   const res = await callGAS('getSubmissions', { courseId: currentCourseId, week: week });
   const tbody = document.getElementById('list-submissions'); tbody.innerHTML = "";
   
@@ -1054,14 +1053,30 @@ async function openSubmissions(week) { // ← 引数を week だけにする
     res.list.sort((a, b) => String(a.studentId || "").localeCompare(String(b.studentId || ""), undefined, { numeric: true }));
     currentSubmissionsData = res.list;
     res.list.forEach((sub, idx) => {
-      const answersText = Array.isArray(sub.answers) ? sub.answers.join(" / ") : (sub.answers || "なし");
+      let statusHtml = "";
+      
+      // 未提出と提出済みで表示を分岐
+      if (sub.score === "未提出") {
+        statusHtml = `<td style="color:#c0392b; background:#fdf2f2; text-align:center; font-weight:bold;" colspan="3">未提出</td>`;
+      } else {
+        const answersText = Array.isArray(sub.answers) ? sub.answers.join(" / ") : (sub.answers || "なし");
+        statusHtml = `
+          <td>${sub.timestamp || "-"}</td>
+          <td><b>${sub.score || "-"}</b></td>
+          <td><button class="btn-lms btn-secondary" style="padding: 2px 8px;" onclick='alert("【得点】\\n${sub.score || "-"}\\n\\n【回答内容】\\n" + ${JSON.stringify(answersText)})'>詳細</button></td>
+        `;
+      }
+
       tbody.innerHTML += `<tr>
         <td style="text-align:center; font-weight:bold; color:#666;">${idx + 1}</td>
-        <td>${sub.studentId || "-"}</td><td><b>${sub.studentName || "-"}</b></td><td>${sub.timestamp || "-"}</td><td><b>${sub.score || "-"}</b></td>
-        <td><button class="btn-lms btn-secondary" style="padding: 2px 8px;" onclick='alert("【得点】\\n${sub.score || "-"}\\n\\n【回答内容】\\n" + ${JSON.stringify(answersText)})'>詳細</button></td>
+        <td>${sub.studentId || "-"}</td><td><b>${sub.studentName || "-"}</b></td>
+        ${statusHtml}
       </tr>`;
     });
-  } else { currentSubmissionsData = []; tbody.innerHTML = "<tr><td colspan='6'>まだ提出がありません。</td></tr>"; }
+  } else { 
+    currentSubmissionsData = []; 
+    tbody.innerHTML = "<tr><td colspan='6'>履修登録されている学生がいないか、データがありません。</td></tr>"; 
+  }
 }
 
 function backToCourseEdit() {
@@ -1072,9 +1087,17 @@ function backToCourseEdit() {
 function downloadSubmissionsCSV() {
   if (currentSubmissionsData.length === 0) return alert("データがありません");
   let csvContent = "\uFEFF学籍番号,氏名,提出日時,得点,回答内容\n";
+  
   currentSubmissionsData.forEach(sub => {
-    csvContent += `${escapeCSV(sub.studentId)},${escapeCSV(sub.studentName)},${escapeCSV(sub.timestamp)},${escapeCSV(sub.score)},${escapeCSV(Array.isArray(sub.answers) ? sub.answers.join(" / ") : sub.answers)}\n`;
+    if (sub.score === "未提出") {
+      // 未提出の場合は空欄で出力
+      csvContent += `${escapeCSV(sub.studentId)},${escapeCSV(sub.studentName)},未提出,未提出,\n`;
+    } else {
+      // 提出済みの場合はスコアと内容を出力
+      csvContent += `${escapeCSV(sub.studentId)},${escapeCSV(sub.studentName)},${escapeCSV(sub.timestamp)},${escapeCSV(sub.score)},${escapeCSV(Array.isArray(sub.answers) ? sub.answers.join(" / ") : sub.answers)}\n`;
+    }
   });
+  
   const link = document.createElement("a");
   link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })));
   link.setAttribute("download", `${document.getElementById('submissions-title').innerText}.csv`);
