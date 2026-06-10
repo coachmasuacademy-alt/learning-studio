@@ -656,6 +656,18 @@ async function doSaveLesson() {
     sessions.push({ title: sItem.querySelector('.s-title').value, videoUrl: sItem.querySelector('.s-youtube').value, requireVideo: sItem.querySelector('.s-require-video').checked, questions: questions });
   });
 
+let hasError = false;
+  document.querySelectorAll('.session-item').forEach(sItem => {
+    const url = sItem.querySelector('.s-youtube').value;
+    const isReq = sItem.querySelector('.s-require-video').checked;
+    if (url && !isReq) {
+      if(!confirm("動画URLがありますが「視聴必須」にチェックが入っていません。このまま保存しますか？")) {
+        hasError = true;
+      }
+    }
+  });
+  if (hasError) return;
+
   const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
   const res = await callGAS('saveLessonData', { courseId: currentCourseId, week: week, title: title, date: date, isOpen: isOpenValue, json: JSON.stringify({ sessions: sessions }) });
   alert("保存しました");
@@ -848,7 +860,8 @@ function startQuiz(lessonData) {
       }
     }
 
-    html += `<div id="q-area-${sIdx}" style="${sess.videoUrl && sess.requireVideo ? 'display:none;' : ''}">`;
+    const isVideoRequired = sess.videoUrl && sess.requireVideo;
+html += `<div id="q-area-${sIdx}" style="${isVideoRequired ? 'display:none;' : ''}">`;
     sess.questions.forEach((q) => {
       const i = globalQIndex++;
       let qBody = "";
@@ -937,14 +950,26 @@ function setupPlayers(sessions) {
         playerVars: { 'rel': 0, 'modestbranding': 1, 'playsinline': 1 }, // iOSでのインライン再生も追加
         events: {
           'onStateChange': (event) => {
-            if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
-              const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
-              if(btnShowQ) btnShowQ.style.display = 'inline-block';
-              localStorage.setItem(storageKey, player.getDuration());
-            }
-            if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx, storageKey);
-            else stopTracking(sIdx);
-          }
+  // ▼ 修正：ENDEDイベントかつ、現在の再生時間が動画の長さの90%を超えている場合のみ視聴完了とみなす
+  if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
+    const playerDuration = player.getDuration(); // 動画の総尺（秒）
+    const currentTime = player.getCurrentTime(); // 現在位置（秒）
+    
+    // 終了位置までシークしただけでなく、正当に視聴したかチェック（90%以上経過していればOK）
+    if (currentTime >= playerDuration * 0.9) {
+      const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
+      if(btnShowQ) btnShowQ.style.display = 'inline-block';
+      localStorage.setItem(storageKey, playerDuration);
+    } else {
+      // 終了位置までシークしたが、視聴時間が足りない場合は元の位置に戻す
+      player.seekTo(window.videoTrackers[sIdx].maxTime, true);
+      alert("動画を最後まで視聴してください。");
+    }
+  }
+  
+  if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx, storageKey);
+  else stopTracking(sIdx);
+}
         }
       });
       currentYTPlayers.push(player);
@@ -957,8 +982,17 @@ function startTracking(player, idx, storageKey) {
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
-    if (currentTime > tracker.maxTime + 2) player.seekTo(tracker.maxTime, true);
-    else if (currentTime > tracker.maxTime) { tracker.maxTime = currentTime; localStorage.setItem(storageKey, currentTime); }
+
+    // ▼ ここを修正・追加します
+    if (currentTime > tracker.maxTime + 2) {
+      player.seekTo(tracker.maxTime, true);
+      // 必要であれば、以下のように警告を出すことも可能です（ただし連発するとうるさいので注意してください）
+      // alert("シークバーによる早送りはできません。"); 
+    } 
+    else if (currentTime > tracker.maxTime) { 
+      tracker.maxTime = currentTime; 
+      localStorage.setItem(storageKey, currentTime); 
+    }
     tracker.lastPos = currentTime;
   }, 500);
 }
@@ -973,6 +1007,15 @@ function stopTracking(idx) {
 
 
 async function checkQuiz(quizData, week) {
+// ▼ 追加：動画視聴必須セッションが完了しているか最終確認
+  const videoBlocks = document.querySelectorAll('[id^="q-area-"]');
+  for (let i = 0; i < videoBlocks.length; i++) {
+    // もし表示されていない（＝視聴完了ボタンが押されていない）セッションがあれば送信拒否
+    if (window.getComputedStyle(videoBlocks[i]).display === 'none') {
+      return alert("動画を最後まで視聴して「視聴完了」ボタンを押してください。");
+    }
+  }
+
   let isAllAnswered = true, firstUnanswered = -1;
   for (let i = 0; i < quizData.length; i++) {
     const q = quizData[i];
