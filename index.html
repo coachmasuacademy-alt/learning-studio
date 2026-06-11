@@ -852,10 +852,10 @@ function startQuiz(lessonData) {
       if (sess.videoUrl.includes("v=")) videoId = sess.videoUrl.split("v=")[1].split("&")[0];
       else if (sess.videoUrl.includes("youtu.be/")) videoId = sess.videoUrl.split("youtu.be/")[1].split("?")[0];
       if (videoId) {
-        // ▼ 修正: 動画表示枠のIDを 'youtube-player-X' に統一
+        // ▼ 修正: 動画表示枠のIDを 'Youtubeer-X' に統一
         html += `<div style="margin-bottom: 20px; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;">
             <p style="font-weight:bold; color:#d32f2f;">${sess.requireVideo ? "🎥 動画を最後まで視聴すると、問題が表示されます" : "🎥 参考動画"}</p>
-            <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;"><div id="youtube-player-${sIdx}" data-videoid="${videoId}"></div></div>
+            <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;"><div id="Youtubeer-${sIdx}" data-videoid="${videoId}"></div></div>
             ${sess.requireVideo ? `<button id="btn-show-q-${sIdx}" class="btn-lms" style="display:none; margin-top:20px; background:#e65100;" onclick="document.getElementById('q-area-${sIdx}').style.display='block'; this.style.display='none';">✅ 視聴完了</button>` : ""}
           </div>`;
       }
