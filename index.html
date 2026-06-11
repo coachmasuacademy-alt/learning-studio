@@ -934,27 +934,42 @@ function initMultipleYTPlayers(sessions) {
   }
 }
 
-window.videoTrackers = {};
+window.videoTrackers = {}; 
+
 function setupPlayers(sessions) {
   sessions.forEach((sess, sIdx) => {
     const el = document.getElementById(`Youtubeer-${sIdx}`);
     if (el && el.dataset.videoid) {
       const videoId = el.dataset.videoid;
-      window.videoTrackers[sIdx] = { interval: null, maxTime: 0 };
+      
+      // メモリ上の状態管理オブジェクトを初期化
+      window.videoTrackers[sIdx] = { interval: null, maxTime: 0 }; 
       
       const player = new YT.Player(`Youtubeer-${sIdx}`, { 
         height: '100%', width: '100%', videoId: videoId,
-        playerVars: { 'rel': 0, 'modestbranding': 1, 'playsinline': 1, 'origin': window.location.origin }, 
+        playerVars: { 
+          'rel': 0, 
+          'modestbranding': 1, 
+          'playsinline': 1, 
+          'controls': 1, // ★フルスクリーンを許可するためコントロールを表示
+          'origin': window.location.origin 
+        }, 
         events: {
           'onStateChange': (event) => {
+            // ▼ 終了時の判定を「現在の位置」から「真面目に見た蓄積時間(maxTime)」に変更
             if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
               const playerDuration = player.getDuration();
-              const currentTime = player.getCurrentTime();
-              if (currentTime >= playerDuration * 0.9) {
+              const watchedTime = window.videoTrackers[sIdx].maxTime; // 今まで到達した最大秒数
+              
+              // 蓄積視聴時間が総尺の90%以上であれば合格
+              if (watchedTime >= playerDuration * 0.9) {
                 const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
                 if(btnShowQ) btnShowQ.style.display = 'inline-block';
               } else {
-                player.seekTo(window.videoTrackers[sIdx].maxTime, true);
+                // シークバーを無理やり飛ばして終了させた場合は、実際の視聴最大位置に引き戻す
+                alert("動画がスキップされました。視聴した位置まで戻ります。");
+                player.seekTo(watchedTime, true);
+                player.playVideo(); // 戻して再度再生させる
               }
             }
             if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx);
@@ -974,9 +989,12 @@ function startTracking(player, idx) {
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
-    if (currentTime > tracker.maxTime + 2) {
+
+    // ▼ ここを + 2 から + 4 に変更します（倍速再生時の誤爆防止）
+    if (currentTime > tracker.maxTime + 4) {
       player.seekTo(tracker.maxTime, true);
-    } else if (currentTime > tracker.maxTime) { 
+    } 
+    else if (currentTime > tracker.maxTime) { 
       tracker.maxTime = currentTime; 
     }
   }, 500);
@@ -988,7 +1006,6 @@ function stopTracking(idx) {
     window.videoTrackers[idx].interval = null;
   }
 }
-
 
 async function checkQuiz(quizData, week) {
   const videoBlocks = document.querySelectorAll('[id^="q-area-"]');
