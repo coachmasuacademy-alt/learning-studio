@@ -332,6 +332,7 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz5SFPFWLrhfQgn37V2
 
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
+window.videoTrackers = {};
 
 async function callGAS(action, params = {}) {
   const formData = new URLSearchParams();
@@ -936,40 +937,29 @@ function initMultipleYTPlayers(sessions) {
 window.videoTrackers = {};
 function setupPlayers(sessions) {
   sessions.forEach((sess, sIdx) => {
-    // ▼ 修正: IDの取得先も 'youtube-player-X' に統一
-    const el = document.getElementById(`youtube-player-${sIdx}`);
+    const el = document.getElementById(`Youtubeer-${sIdx}`);
     if (el && el.dataset.videoid) {
       const videoId = el.dataset.videoid;
-      const storageKey = `lms_progress_${currentStudentId}_${currentCourseId}_${videoId}`;
-      let savedMaxTime = parseFloat(localStorage.getItem(storageKey)) || 0;
-      window.videoTrackers[sIdx] = { interval: null, maxTime: savedMaxTime, lastPos: 0 };
-
-      // ▼ 修正: YT.Player の第一引数も 'youtube-player-X' に統一
-      const player = new YT.Player(`youtube-player-${sIdx}`, { 
+      window.videoTrackers[sIdx] = { interval: null, maxTime: 0 };
+      
+      const player = new YT.Player(`Youtubeer-${sIdx}`, { 
         height: '100%', width: '100%', videoId: videoId,
-        playerVars: { 'rel': 0, 'modestbranding': 1, 'playsinline': 1 }, // iOSでのインライン再生も追加
+        playerVars: { 'rel': 0, 'modestbranding': 1, 'playsinline': 1, 'origin': window.location.origin }, 
         events: {
           'onStateChange': (event) => {
-  // ▼ 修正：ENDEDイベントかつ、現在の再生時間が動画の長さの90%を超えている場合のみ視聴完了とみなす
-  if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
-    const playerDuration = player.getDuration(); // 動画の総尺（秒）
-    const currentTime = player.getCurrentTime(); // 現在位置（秒）
-    
-    // 終了位置までシークしただけでなく、正当に視聴したかチェック（90%以上経過していればOK）
-    if (currentTime >= playerDuration * 0.9) {
-      const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
-      if(btnShowQ) btnShowQ.style.display = 'inline-block';
-      localStorage.setItem(storageKey, playerDuration);
-    } else {
-      // 終了位置までシークしたが、視聴時間が足りない場合は元の位置に戻す
-      player.seekTo(window.videoTrackers[sIdx].maxTime, true);
-      alert("動画を最後まで視聴してください。");
-    }
-  }
-  
-  if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx, storageKey);
-  else stopTracking(sIdx);
-}
+            if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
+              const playerDuration = player.getDuration();
+              const currentTime = player.getCurrentTime();
+              if (currentTime >= playerDuration * 0.9) {
+                const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
+                if(btnShowQ) btnShowQ.style.display = 'inline-block';
+              } else {
+                player.seekTo(window.videoTrackers[sIdx].maxTime, true);
+              }
+            }
+            if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx);
+            else stopTracking(sIdx);
+          }
         }
       });
       currentYTPlayers.push(player);
@@ -977,40 +967,32 @@ function setupPlayers(sessions) {
   });
 }
 
-function startTracking(player, idx, storageKey) {
+function startTracking(player, idx) {
   stopTracking(idx);
+  if (!window.videoTrackers[idx]) window.videoTrackers[idx] = { interval: null, maxTime: 0 };
+  
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
-
-    // ▼ ここを修正・追加します
     if (currentTime > tracker.maxTime + 2) {
       player.seekTo(tracker.maxTime, true);
-      // 必要であれば、以下のように警告を出すことも可能です（ただし連発するとうるさいので注意してください）
-      // alert("シークバーによる早送りはできません。"); 
-    } 
-    else if (currentTime > tracker.maxTime) { 
+    } else if (currentTime > tracker.maxTime) { 
       tracker.maxTime = currentTime; 
-      localStorage.setItem(storageKey, currentTime); 
     }
-    tracker.lastPos = currentTime;
   }, 500);
 }
 
 function stopTracking(idx) {
   if (window.videoTrackers[idx] && window.videoTrackers[idx].interval) { 
     clearInterval(window.videoTrackers[idx].interval); 
-    window.videoTrackers[idx].interval = null; 
+    window.videoTrackers[idx].interval = null;
   }
 }
 
 
-
 async function checkQuiz(quizData, week) {
-// ▼ 追加：動画視聴必須セッションが完了しているか最終確認
   const videoBlocks = document.querySelectorAll('[id^="q-area-"]');
   for (let i = 0; i < videoBlocks.length; i++) {
-    // もし表示されていない（＝視聴完了ボタンが押されていない）セッションがあれば送信拒否
     if (window.getComputedStyle(videoBlocks[i]).display === 'none') {
       return alert("動画を最後まで視聴して「視聴完了」ボタンを押してください。");
     }
