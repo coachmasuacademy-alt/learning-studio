@@ -838,6 +838,7 @@ async function loadStudentLessons(id) {
 
 let currentYTPlayers = [];
 function startQuiz(lessonData) {
+  window.currentLessonWeek = lessonData.week; // ★追加：別の関数から週番号を参照するため
   document.getElementById('student-quiz-area').classList.remove('hidden');
   document.getElementById('student-quiz-area').scrollIntoView({behavior:'smooth'});
   document.getElementById('quiz-title').innerText = `第${lessonData.week}回: ${lessonData.title}`;
@@ -850,6 +851,10 @@ function startQuiz(lessonData) {
   
   if(sessions.length === 0) { document.getElementById('quiz-content').innerHTML = "課題設定がありません。"; return; }
   
+  // ★追加：動画の視聴状態をローカルストレージから取得
+  const videoDraftKey = `lms_video_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
+  const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
+
   let html = "", globalQIndex = 0;
   sessions.forEach((sess, sIdx) => {
     html += `<div class="session-block" style="margin-bottom: 40px; border: 2px solid #e0f2f1; border-radius: 8px; padding: 20px; background: #fff;">
@@ -860,17 +865,23 @@ function startQuiz(lessonData) {
       if (sess.videoUrl.includes("v=")) videoId = sess.videoUrl.split("v=")[1].split("&")[0];
       else if (sess.videoUrl.includes("youtu.be/")) videoId = sess.videoUrl.split("youtu.be/")[1].split("?")[0];
       if (videoId) {
-        // ▼ 修正: 動画表示枠のIDを 'Youtubeer-X' に統一
+        // ★追加：すでに視聴完了済みかどうかを判定
+        const isCompleted = savedVideoState[`video_${sIdx}_completed`] === true;
+
         html += `<div style="margin-bottom: 20px; text-align: center; background: #f9f9f9; padding: 15px; border-radius: 8px;">
             <p style="font-weight:bold; color:#d32f2f;">${sess.requireVideo ? "🎥 動画を最後まで視聴すると、問題が表示されます" : "🎥 参考動画"}</p>
             <div style="width: 100%; max-width: 720px; margin: 0 auto; aspect-ratio: 16/9;"><div id="Youtubeer-${sIdx}" data-videoid="${videoId}"></div></div>
-            ${sess.requireVideo ? `<button id="btn-show-q-${sIdx}" class="btn-lms" style="display:none; margin-top:20px; background:#e65100;" onclick="document.getElementById('q-area-${sIdx}').style.display='block'; this.style.display='none';">✅ 視聴完了</button>` : ""}
+            ${sess.requireVideo && !isCompleted ? `<button id="btn-show-q-${sIdx}" class="btn-lms" style="display:none; margin-top:20px; background:#e65100;" onclick="document.getElementById('q-area-${sIdx}').style.display='block'; this.style.display='none';">✅ 視聴完了</button>` : ""}
+            ${sess.requireVideo && isCompleted ? `<span style="display:inline-block; margin-top:20px; color:green; font-weight:bold;">✅ 視聴完了済み（再開）</span>` : ""}
           </div>`;
       }
     }
 
     const isVideoRequired = sess.videoUrl && sess.requireVideo;
-html += `<div id="q-area-${sIdx}" style="${isVideoRequired ? 'display:none;' : ''}">`;
+    const isCompletedForArea = savedVideoState[`video_${sIdx}_completed`] === true;
+    // ★変更：視聴完了済みなら最初から問題エリアを表示しておく
+    html += `<div id="q-area-${sIdx}" style="${(isVideoRequired && !isCompletedForArea) ? 'display:none;' : ''}">`;
+    
     sess.questions.forEach((q) => {
       const i = globalQIndex++;
       let qBody = "";
@@ -924,7 +935,6 @@ html += `<div id="q-area-${sIdx}" style="${isVideoRequired ? 'display:none;' : '
     localStorage.setItem(draftKey, JSON.stringify(currentDraft));
   };
 
-  // ▼ 修正: タイマー等で少し待ってからプレーヤーを初期化する（APIの読み込みラグ対策）
   setTimeout(() => {
     initMultipleYTPlayers(sessions);
   }, 100);
@@ -950,7 +960,6 @@ function setupPlayers(sessions) {
     if (el && el.dataset.videoid) {
       const videoId = el.dataset.videoid;
       
-      // メモリ上の状態管理オブジェクトを初期化
       window.videoTrackers[sIdx] = { interval: null, maxTime: 0 }; 
       
       const player = new YT.Player(`Youtubeer-${sIdx}`, { 
@@ -959,25 +968,29 @@ function setupPlayers(sessions) {
           'rel': 0, 
           'modestbranding': 1, 
           'playsinline': 1, 
-          'controls': 1, // ★フルスクリーンを許可するためコントロールを表示
+          'controls': 1, 
           'origin': window.location.origin 
         }, 
         events: {
           'onStateChange': (event) => {
-            // ▼ 終了時の判定を「現在の位置」から「真面目に見た蓄積時間(maxTime)」に変更
             if (event.data === YT.PlayerState.ENDED && sess.requireVideo) {
               const playerDuration = player.getDuration();
-              const watchedTime = window.videoTrackers[sIdx].maxTime; // 今まで到達した最大秒数
+              const watchedTime = window.videoTrackers[sIdx].maxTime; 
               
-              // 蓄積視聴時間が総尺の90%以上であれば合格
               if (watchedTime >= playerDuration * 0.9) {
                 const btnShowQ = document.getElementById(`btn-show-q-${sIdx}`);
                 if(btnShowQ) btnShowQ.style.display = 'inline-block';
+                
+                // ★追加：視聴完了ステータスを保存する
+                const videoDraftKey = `lms_video_${currentStudentId}_${currentCourseId}_${window.currentLessonWeek}`;
+                const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
+                savedVideoState[`video_${sIdx}_completed`] = true;
+                localStorage.setItem(videoDraftKey, JSON.stringify(savedVideoState));
+                
               } else {
-                // シークバーを無理やり飛ばして終了させた場合は、実際の視聴最大位置に引き戻す
                 alert("動画がスキップされました。視聴した位置まで戻ります。");
                 player.seekTo(watchedTime, true);
-                player.playVideo(); // 戻して再度再生させる
+                player.playVideo(); 
               }
             }
             if (event.data === YT.PlayerState.PLAYING || event.data === 3) startTracking(player, sIdx);
@@ -992,18 +1005,28 @@ function setupPlayers(sessions) {
 
 function startTracking(player, idx) {
   stopTracking(idx);
-  if (!window.videoTrackers[idx]) window.videoTrackers[idx] = { interval: null, maxTime: 0 };
+  
+  // ★追加：保存された最大視聴時間を復元する
+  const videoDraftKey = `lms_video_${currentStudentId}_${currentCourseId}_${window.currentLessonWeek}`;
+  const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
+
+  if (!window.videoTrackers[idx]) {
+    // 保存データがあればその秒数から引き継ぐ
+    window.videoTrackers[idx] = { interval: null, maxTime: savedVideoState[`video_${idx}_maxTime`] || 0 };
+  }
   
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
 
-    // ▼ ここを + 2 から + 4 に変更します（倍速再生時の誤爆防止）
     if (currentTime > tracker.maxTime + 4) {
       player.seekTo(tracker.maxTime, true);
     } 
     else if (currentTime > tracker.maxTime) { 
       tracker.maxTime = currentTime; 
+      // ★追加：視聴記録を定期的に保存
+      savedVideoState[`video_${idx}_maxTime`] = tracker.maxTime;
+      localStorage.setItem(videoDraftKey, JSON.stringify(savedVideoState));
     }
   }, 500);
 }
@@ -1071,7 +1094,10 @@ async function checkQuiz(quizData, week) {
     if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue;">データを送信しています...</p>');
     await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
     document.getElementById('submit-msg').innerText = "✅ 送信完了！";
+    
+    // ★追加：回答記録と動画履歴の両方をクリア
     localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
+    localStorage.removeItem(`lms_video_${currentStudentId}_${currentCourseId}_${week}`); 
   } catch (e) {
     document.getElementById('submit-msg').innerText = "❌ 送信に失敗しました。";
   }
