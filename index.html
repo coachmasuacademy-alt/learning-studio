@@ -432,7 +432,7 @@
       <div id="student-lesson-area" class="hidden">
           <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
             <button class="btn-lms btn-secondary" style="width:auto;" onclick="backToStudentDash()">← 講義一覧に戻る</button>
-            <button id="btn-stu-groupwork" class="btn-lms" style="width:auto; background:#ff9f43;" onclick="openStudentGroupWork()">🧑‍🤝‍🧑 グループワークに参加</button>
+            <button id="btn-stu-groupwork" class="btn-lms" style="width:auto; background:#95a5a6; cursor:not-allowed;" onclick="openStudentGroupWork()" disabled>🔒 グループワーク（当日に公開されます）</button>
           </div>
           <h3 id="student-course-title"></h3>
           <div id="student-lesson-list" class="card"></div>
@@ -503,7 +503,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxL4NXzxqWt_JPMrllKztv28oAzuDLPjqJHjGXC2wSwdWOtyl7msxIGp2-6tkVMnUEt/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxjTV8UDIt9obf1q841e8AkQ0gQhQMcpGXuDQd8KQrYVrGj-B-NjhFxDlCsTFSmPDMv7g/exec";
 
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
@@ -1884,17 +1884,41 @@ async function loadStudentAssignedGroup(isAutoRefresh = false) {
   
   const res = await callGAS('getCourseStudents', { courseId: currentCourseId });
   if (res.success) {
+    
+    // ▼▼▼ 追加：教員が入室制限（非公開）に切り替えた場合の自動追い出し＆ボタン同期 ▼▼▼
+    const gwBtn = document.getElementById('btn-stu-groupwork');
+    if (gwBtn) {
+      if (res.groupWorkOpen) {
+        gwBtn.disabled = false;
+        gwBtn.innerText = "🧑‍🤝‍🧑 グループワークに参加";
+        gwBtn.style.background = "#ff9f43";
+        gwBtn.style.cursor = "pointer";
+      } else {
+        gwBtn.disabled = true;
+        gwBtn.innerText = "🔒 グループワーク（当日に公開されます）";
+        gwBtn.style.background = "#95a5a6";
+        gwBtn.style.cursor = "not-allowed";
+        
+        // すでに学生がグループワーク画面を開いていた場合は、アラートを出して強制的に講義トップへ戻す
+        const gwView = document.getElementById('view-student-groupwork');
+        if (gwView && !gwView.classList.contains('hidden')) {
+          alert("講師によりグループワークの入室制限が設定されました。講義画面に戻ります。");
+          closeStudentGroupWork();
+          return;
+        }
+      }
+    }
+    // ▲▲▲ 追加ここまで ▲▲▲
+
     const myData = res.list.find(s => String(s.id || s.studentId) === String(currentStudentId));
     if (myData) {
       if(myData.category) document.getElementById('student-category-select').value = myData.category;
       document.getElementById('student-assigned-group').innerText = myData.group && myData.group !== "未割り当て" ? `第 ${myData.group} グループ` : "未割り当て";
       if (myData.isLeader) document.getElementById('student-leader-msg').innerHTML = "👑 あなたは「グループリーダー」です！";
       
-      // ▼ 追加：グループが確定していればテーマも自動で裏読みする
       if (myData.group && myData.group !== "未割り当て") {
         loadStudentTheme();
       }
-      // ▲ 追加ここまで ▲
     } else {
       document.getElementById('student-assigned-group').innerText = "未割り当て";
     }
