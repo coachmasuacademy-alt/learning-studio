@@ -503,8 +503,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxjTV8UDIt9obf1q841e8AkQ0gQhQMcpGXuDQd8KQrYVrGj-B-NjhFxDlCsTFSmPDMv7g/exec";
-
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwPoswHAQ6GhXU2r5OQmzwzo0FXRQl4mgTpg3sgQp4dpvIlQ_yxj1I44iWQWO-WKeHszg/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -1749,8 +1748,8 @@ function renderTeacherGroupList(students) {
   tbody.innerHTML = "";
   
   if (students.length === 0) {
-    thead.innerHTML = `<tr><th>学籍番号</th><th>氏名</th><th>カテゴリー</th><th>現在のグループ</th></tr>`;
-    tbody.innerHTML = "<tr><td colspan='4'>登録されている学生がいません。</td></tr>";
+    thead.innerHTML = `<tr><th>出席</th><th>学籍番号</th><th>氏名</th><th>カテゴリー</th><th>現在のグループ</th></tr>`;
+    tbody.innerHTML = "<tr><td colspan='5'>登録されている学生がいません。</td></tr>";
     return;
   }
   
@@ -1760,15 +1759,15 @@ function renderTeacherGroupList(students) {
     if (s.history && s.history.length > maxHistory) maxHistory = s.history.length;
   });
 
-  // ヘッダー（見出し行）を動的に組み立て
+  // ヘッダー（見出し行）を動的に組み立て（一番左に「出席」列を追加）
   let thHtml = `<tr>
+    <th style="width:50px; text-align:center;">出席</th>
     <th>学籍番号</th>
     <th>氏名</th>
     <th>カテゴリー</th>
     <th style="background:#d0ece7; text-align:center; width:70px;">基準</th>`;
   
   for(let i = 1; i <= maxHistory; i++) {
-    // 1〜20までは丸数字（①, ②...）の文字コードに変換、それ以上は(21)形式
     const circleNum = i <= 20 ? String.fromCharCode(0x245F + i) : `(${i})`;
     thHtml += `<th style="text-align:center; color:#555; width:60px;">${circleNum}</th>`;
   }
@@ -1776,7 +1775,12 @@ function renderTeacherGroupList(students) {
   thead.innerHTML = thHtml;
 
   // データ行の生成
-  students.forEach(s => {
+  students.forEach((s, index) => {
+    // デフォルトは出席 (isActive が未定義なら true をセット)
+    if (typeof s.isActive === 'undefined') s.isActive = true;
+    const isChecked = s.isActive ? "checked" : "";
+    const rowOpacity = s.isActive ? "1" : "0.5"; // 欠席者は半透明にする
+
     const leaderIcon = s.isLeader ? ` <span title="リーダー">👑</span>` : "";
     const baseBadge = s.baseGroup ? `<span style="background:#1abc9c; color:white; padding:3px 8px; border-radius:12px; font-weight:bold;">G-${s.baseGroup}</span>` : `<span style="color:#aaa;">-</span>`;
 
@@ -1789,7 +1793,10 @@ function renderTeacherGroupList(students) {
 
     const groupBadge = s.group && s.group !== "未割り当て" ? `<span style="background:#d35400; color:white; padding:3px 8px; border-radius:12px; font-weight:bold;">G-${s.group}</span>` : `<span style="color:#999;">未割り当て</span>`;
     
-    tbody.innerHTML += `<tr>
+    tbody.innerHTML += `<tr id="gw-row-${index}" style="opacity: ${rowOpacity}; transition: opacity 0.3s;">
+      <td style="text-align:center;">
+        <input type="checkbox" style="transform: scale(1.3); cursor: pointer;" onchange="toggleStudentAttendance(${index}, this.checked)" ${isChecked}>
+      </td>
       <td>${s.id || s.studentId || "-"}</td>
       <td><b>${s.name || "-"}${leaderIcon}</b></td>
       <td>${s.category || "未選択"}</td>
@@ -1800,19 +1807,40 @@ function renderTeacherGroupList(students) {
   });
 }
 
+function toggleStudentAttendance(index, isChecked) {
+  if (currentGroupWorkStudents[index]) {
+    currentGroupWorkStudents[index].isActive = isChecked;
+    const row = document.getElementById(`gw-row-${index}`);
+    if (row) {
+      row.style.opacity = isChecked ? "1" : "0.5"; // チェックが外れたら行を半透明にする
+    }
+  }
+}
+
 function generateGroups() {
   if (currentGroupWorkStudents.length === 0) return alert("対象の学生がいません");
   const splitType = document.getElementById('group-split-type').value;
   const splitNum = parseInt(document.getElementById('group-split-num').value);
   if (!splitNum || splitNum < 1) return alert("数値を正しく入力してください");
 
-  // シャッフル（ランダム化）
-  let targets = [...currentGroupWorkStudents].sort(() => Math.random() - 0.5);
+  // 出席者（isActive !== false）と欠席者（isActive === false）に分ける
+  let targets = currentGroupWorkStudents.filter(s => s.isActive !== false).sort(() => Math.random() - 0.5);
+  let absentees = currentGroupWorkStudents.filter(s => s.isActive === false);
+
+  if (targets.length === 0) return alert("出席している学生がいません");
+
   let groupCount = splitType === 'count' ? splitNum : Math.ceil(targets.length / splitNum);
 
+  // 出席者にグループを割り振る
   targets.forEach((s, index) => {
     s.group = (index % groupCount) + 1;
     s.isLeader = false; // リーダー権限をリセット
+  });
+
+  // 欠席者はグループから外し、リーダー権限もリセット
+  absentees.forEach(s => {
+    s.group = "未割り当て";
+    s.isLeader = false;
   });
 
   // 各グループの1人目を自動的にリーダー(👑)に任命
@@ -1821,9 +1849,10 @@ function generateGroups() {
     if(member) member.isLeader = true;
   }
 
-  currentGroupWorkStudents = targets;
+  // 出席者が上、欠席者が下になるように配列を結合して再描画
+  currentGroupWorkStudents = [...targets, ...absentees];
   renderTeacherGroupList(currentGroupWorkStudents);
-  alert("グループとリーダーを仮生成しました。「結果を学生に公開」ボタンで確定してください。");
+  alert("出席者を対象にグループとリーダーを仮生成しました。「結果を学生に公開」ボタンで確定してください。");
 }
 
 async function saveGeneratedGroups() {
@@ -1848,7 +1877,9 @@ async function saveGeneratedGroups() {
     isLeader: s.isLeader, 
     category: s.category,
     baseGroup: s.baseGroup || "",     // 基準グループを内包
-    history: s.history || []          // 履歴配列を内包
+    history: s.history || [],         // 履歴配列を内包
+    // ▼ 追加：チェックボックスの状態（出席フラグ）をGASに送る
+    isActive: s.isActive !== false
   }));
 
   const res = await callGAS('saveGeneratedGroups', { courseId: currentCourseId, groupDataJson: JSON.stringify(updates) });
@@ -1966,7 +1997,10 @@ function restoreBaseGroup() {
   if (!hasBase) return alert("基準グループが登録されている学生がいません。先に「現在のグループを基準に登録」を行ってください。");
   
   currentGroupWorkStudents.forEach(s => {
-    if (s.baseGroup) {
+    // 欠席者は基準グループが登録されていても「未割り当て」にする
+    if (s.isActive === false) {
+      s.group = "未割り当て";
+    } else if (s.baseGroup) {
       s.group = s.baseGroup; // 基準の割り振りに書き戻す
     } else {
       s.group = "未割り当て";
@@ -1974,15 +2008,15 @@ function restoreBaseGroup() {
     s.isLeader = false; // リーダーをリセット
   });
 
-  // 各グループの先頭メンバーを自動的にアクティビティリーダー(👑)に再任命
+  // 出席者の中で各グループの先頭メンバーをリーダー(👑)に再任命
   let activeGroups = new Set(currentGroupWorkStudents.map(s => s.group).filter(g => g !== "未割り当て"));
   activeGroups.forEach(gNum => {
-    const member = currentGroupWorkStudents.find(t => t.group === gNum);
+    const member = currentGroupWorkStudents.find(t => t.group === gNum && t.isActive !== false);
     if(member) member.isLeader = true;
   });
 
   renderTeacherGroupList(currentGroupWorkStudents);
-  alert("全員の配置を基準グループの状態へ引き戻しました！\n※受講生画面に一斉反映させるには「結果を学生に公開（保存）」を押してください。");
+  alert("出席者の配置を基準グループの状態へ引き戻しました！\n※受講生画面に一斉反映させるには「結果を学生に公開（保存）」を押してください。");
 }
 
 function clearGroupHistory() {
