@@ -94,7 +94,7 @@
         <h3>学生ログイン</h3>
         <input type="email" id="stu-email" placeholder="メールアドレス">
         <input type="password" id="stu-pass" placeholder="パスワード">
-        <button class="btn-lms" onclick="doStudentLogin()">ログイン</button>
+        <button class="btn-lms" onclick="doStudentLogin(this)">ログイン</button>
         <hr>
         <button class="btn-lms btn-secondary" onclick="showStuRegForm()">新規学生登録はこちら</button>
       </div>
@@ -144,8 +144,8 @@
       
       <div class="card" style="background:#e8f6f3;">
         <h3>新規講義の作成</h3>
-        <input type="text" id="new-course-id" placeholder="講義ID (学生ログイン用)">
-        <input type="text" id="new-course-pass" placeholder="パスワード (学生ログイン用)">
+        <input type="text" id="new-course-id" placeholder="講義ID (学生ログイン用)" autocomplete="off">
+<input type="text" id="new-course-pass" placeholder="パスワード (学生ログイン用)" autocomplete="off">
         <input type="text" id="new-course-name" placeholder="講義名">
         <button class="btn-lms" onclick="doCreateCourse()">講義を作成</button>
       </div>
@@ -292,6 +292,13 @@
           <p id="student-leader-msg" style="font-size:1.1rem; font-weight:bold; color:#e67e22; margin-top:5px;"></p>
           <button class="btn-lms" style="width:auto; padding:5px 10px; background:#f39c12;" onclick="loadStudentAssignedGroup()">↻ グループを更新</button>
         </div>
+<div class="card" style="background:#eaf2f8; border: 2px solid #3498db; margin-top:15px; box-shadow:none;">
+          <h3 style="margin-top:0; color:#2980b9;">💬 ディスカッションテーマ</h3>
+          <div id="student-theme-display">
+            <span style="color:#999;">グループが割り当てられると表示されます。</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -503,7 +510,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyfzKie1TF6q6CQKLG-cjM3xwrZTOaB_egzWoCPP_c6wpKn8aGr32ditau9mF4nf1IgiQ/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxNLd5g5BARCfh1dCJoRIfrjeau9LNMvxYcY1Odwv4VCi8AfMEyMtdcK3rj9t2e_xmsXw/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -891,10 +898,12 @@ async function doStudentRegister() {
   btn.disabled = false; btn.innerText = "登録する";
 }
 
-async function doStudentLogin() {
+async function doStudentLogin(btn) {
   const e = document.getElementById('stu-email').value;
   const p = document.getElementById('stu-pass').value;
-  const btn = event.target; btn.disabled = true; btn.innerText = "確認中...";
+  
+  btn.disabled = true; // event.target は使わず、引数を使う
+  btn.innerText = "確認中...";
   
   const res = await callGAS('studentLogin', {email: e, password: p});
   if(res.success) {
@@ -1076,7 +1085,7 @@ function startQuiz(lessonData) {
   if (lessonData.isSubmitted) {
     html += `<button class="btn-lms" disabled style="background:#95a5a6; cursor:not-allowed; font-size:1.2rem; padding:15px; margin-top:10px;">✅ 提出済みです</button>`;
   } else {
-    html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}")' style="font-size:1.2rem; padding:15px; margin-top:10px;">回答を送信する</button>`;
+   html += `<button class="btn-lms" onclick='checkQuiz(${JSON.stringify(flatQuestions)}, "${lessonData.week}", this)' style="font-size:1.2rem; padding:15px; margin-top:10px;">回答を送信する</button>`;
   }
   document.getElementById('quiz-content').innerHTML = html;
 
@@ -1172,15 +1181,15 @@ function setupPlayers(sessions) {
 function startTracking(player, idx) {
   stopTracking(idx);
   
-  // ★追加：保存された最大視聴時間を復元する
   const videoDraftKey = `lms_video_${currentStudentId}_${currentCourseId}_${window.currentLessonWeek}`;
   const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
 
   if (!window.videoTrackers[idx]) {
-    // 保存データがあればその秒数から引き継ぐ
     window.videoTrackers[idx] = { interval: null, maxTime: savedVideoState[`video_${idx}_maxTime`] || 0 };
   }
   
+  let tickCount = 0; // ★追加: カウンタを用意
+
   window.videoTrackers[idx].interval = setInterval(() => {
     const currentTime = player.getCurrentTime();
     let tracker = window.videoTrackers[idx];
@@ -1190,9 +1199,13 @@ function startTracking(player, idx) {
     } 
     else if (currentTime > tracker.maxTime) { 
       tracker.maxTime = currentTime; 
-      // ★追加：視聴記録を定期的に保存
-      savedVideoState[`video_${idx}_maxTime`] = tracker.maxTime;
-      localStorage.setItem(videoDraftKey, JSON.stringify(savedVideoState));
+      
+      // ★修正: 10回に1回（約5秒ごと）だけローカルストレージに保存する
+      tickCount++;
+      if (tickCount % 10 === 0) {
+        savedVideoState[`video_${idx}_maxTime`] = tracker.maxTime;
+        localStorage.setItem(videoDraftKey, JSON.stringify(savedVideoState));
+      }
     }
   }, 500);
 }
@@ -1204,7 +1217,7 @@ function stopTracking(idx) {
   }
 }
 
-async function checkQuiz(quizData, week) {
+async function checkQuiz(quizData, week, submitBtn) {
   const videoBlocks = document.querySelectorAll('[id^="q-area-"]');
   for (let i = 0; i < videoBlocks.length; i++) {
     if (window.getComputedStyle(videoBlocks[i]).display === 'none') {
@@ -1226,7 +1239,7 @@ async function checkQuiz(quizData, week) {
   if (!isAllAnswered) return alert(`未回答の問題があります（Q${firstUnanswered}）。`);
 
   let score = 0, totalScoreQuestions = 0, studentAnswers = [];
-  const submitBtn = event.target; if(submitBtn) submitBtn.style.display = 'none'; 
+  if(submitBtn) submitBtn.style.display = 'none'; 
 
   quizData.forEach((q, i) => {
     const fb = document.getElementById(`fb-${i}`); fb.style.display = 'block'; 
