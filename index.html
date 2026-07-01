@@ -73,6 +73,7 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -1217,7 +1218,7 @@ function stopTracking(idx) {
   }
 }
 
-async function checkQuiz(quizData, week, submitBtn) {
+async function checkQuiz(quizData, week) {
   const videoBlocks = document.querySelectorAll('[id^="q-area-"]');
   for (let i = 0; i < videoBlocks.length; i++) {
     if (window.getComputedStyle(videoBlocks[i]).display === 'none') {
@@ -1239,7 +1240,7 @@ async function checkQuiz(quizData, week, submitBtn) {
   if (!isAllAnswered) return alert(`未回答の問題があります（Q${firstUnanswered}）。`);
 
   let score = 0, totalScoreQuestions = 0, studentAnswers = [];
-  if(submitBtn) submitBtn.style.display = 'none'; 
+  const submitBtn = event.target; if(submitBtn) submitBtn.style.display = 'none'; 
 
   quizData.forEach((q, i) => {
     const fb = document.getElementById(`fb-${i}`); fb.style.display = 'block'; 
@@ -1270,16 +1271,59 @@ async function checkQuiz(quizData, week, submitBtn) {
   document.getElementById('quiz-result').scrollIntoView({behavior:'smooth'});
 
   try {
-    if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue;">データを送信しています...</p>');
-    await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
-    document.getElementById('submit-msg').innerText = "✅ 送信完了！";
+    if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue; font-weight:bold;">データを送信しています。このままお待ちください...</p>');
     
-    // ★追加：回答記録と動画履歴の両方をクリア
-    localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
-    localStorage.removeItem(`lms_video_${currentStudentId}_${currentCourseId}_${week}`); 
+    const res = await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
+    
+    if (res.success) {
+      // 正常にGASに保存された場合
+      document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信が完了し、提出データが保存されました！</span>";
+      
+      // 回答記録と動画履歴の両方をクリア
+      localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
+      localStorage.removeItem(`lms_video_${currentStudentId}_${currentCourseId}_${week}`); 
+    } else {
+      // GASからの応答がエラーだった場合（同時アクセス過多など）
+      throw new Error(res.message || "サーバー側でエラーが発生しました。");
+    }
+    
   } catch (e) {
-    document.getElementById('submit-msg').innerText = "❌ 送信に失敗しました。";
+    // 通信エラー、またはGASエラーだった場合の処理
+    document.getElementById('submit-msg').innerHTML = `<span style="color:red; font-weight:bold;">❌ 通信エラーで送信に失敗しました。<br>証拠として現在の画面を画像として自動保存します。</span>`;
+    
+    // エラー証拠画像をダウンロードする関数を呼び出す
+    saveProofAsJPEG();
   }
+}
+
+// ==========================================
+// 📸 送信エラー時の証拠JPEG自動保存機能
+// ==========================================
+function saveProofAsJPEG() {
+  const element = document.getElementById('student-quiz-area');
+  
+  // YouTubeのiframeがあるとセキュリティ制限(CORS)で画像化が止まるため一時的に非表示にする
+  const iframes = element.querySelectorAll('iframe');
+  iframes.forEach(iframe => iframe.style.display = 'none');
+
+  // 画面をCanvas（画像）に変換
+  html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
+    // ダウンロード用のリンクを作成
+    const link = document.createElement('a');
+    // ファイル名（例：送信エラー証拠_第3回_240001.jpg）
+    link.download = `送信エラー証拠_第${window.currentLessonWeek}回_${currentStudentId}.jpg`;
+    // JPEG形式で出力（品質0.9）
+    link.href = canvas.toDataURL("image/jpeg", 0.9);
+    link.click();
+    
+    // 非表示にした動画エリアを元に戻す
+    iframes.forEach(iframe => iframe.style.display = 'block'); 
+    
+    alert("⚠️【重要】通信エラーが発生したため、未提出となっています。\n\n回答内容と採点結果の「証拠画像（JPEG）」を端末にダウンロードしました。\n担当教員にこの画像を見せて対応を求めてください。");
+  }).catch(err => {
+    iframes.forEach(iframe => iframe.style.display = 'block');
+    alert("証拠画像の保存にも失敗しました。至急、この画面のスクリーンショットを撮ってください。");
+  });
 }
 
 function downloadQuizPDF(btn) {
