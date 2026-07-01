@@ -438,7 +438,7 @@
           
           <div class="card" style="background:#e8f8f5; border: 2px solid #1abc9c; margin-top:20px;">
             <h3 style="margin-top:0; color:#16a085;">📂 提出控え（画像フォルダ）</h3>
-            <p style="font-size:0.9rem; color:#555;">回答を送信すると、自動的に採点結果の証拠画像がここに保存されます。通信エラーなどで提出できなかった場合は、ここから教員へ再提出してください。</p>
+            <p style="font-size:0.9rem; color:#555;">回答を送信すると、自動的に採点結果の証拠画像がここに保存されます。通信エラーなどで提出できなかった場合は、必要な画像をダウンロードして教員へ提示・提出してください。</p>
             <button class="btn-lms" style="background:#16a085; width:auto;" onclick="openStudentFolder()">画像フォルダを開く</button>
           </div>
       </div>
@@ -1369,7 +1369,7 @@ async function checkQuiz(quizData, week) {
     }
     
   } catch (e) {
-    document.getElementById('submit-msg').innerHTML = `<span style="color:red; font-weight:bold;">❌ 通信エラーで送信に失敗しました。<br>回答の証拠は端末の「画像フォルダ」に自動保存されています。ダッシュボードに戻り、そこから教員へ再提出してください。</span>`;
+    document.getElementById('submit-msg').innerHTML = `<span style="color:red; font-weight:bold;">❌ 通信エラーで送信に失敗しました。<br>回答の証拠は端末の「画像フォルダ」に自動保存されています。ダッシュボードに戻り、画像をダウンロードして教員へ提出してください。</span>`;
   }
 }
 
@@ -1435,7 +1435,6 @@ async function openStudentFolder() {
         
         <div style="display:flex; flex-direction:column; gap:8px;">
           <a href="${record.imageData}" download="${fileName}" class="btn-lms" style="text-align:center; text-decoration:none; background:#ee9b00; padding:8px;">📥 端末にダウンロード</a>
-          <button class="btn-lms" style="background:#e74c3c; padding:8px;" onclick="submitProofImageFromFolder(${record.id}, '${record.courseId}', '${record.week}', this)">📤 先生に証拠として提出</button>
           <button class="btn-lms btn-secondary" style="padding:8px; background:#95a5a6;" onclick="removeReceiptUI(${record.id})">🗑 この画像を削除</button>
         </div>
         <p id="folder-status-${record.id}" style="font-size:0.85rem; font-weight:bold; margin-top:5px;"></p>
@@ -1456,46 +1455,6 @@ async function removeReceiptUI(id) {
   }
 }
 
-// フォルダから直接教員（GAS）へ画像を提出する処理
-async function submitProofImageFromFolder(id, courseId, week, btnElem) {
-  if(!confirm(`第${week}回の証拠画像を教員に提出しますか？`)) return;
-  
-  const statusMsg = document.getElementById(`folder-status-${id}`);
-  btnElem.disabled = true;
-  statusMsg.innerText = "画像を提出中...";
-  statusMsg.style.color = "blue";
-  
-  // DBから画像データを再取得
-  const allReceipts = await getReceiptsFromLocal();
-  const record = allReceipts.find(r => r.id === id);
-  if(!record) {
-    statusMsg.innerText = "❌ 画像が見つかりません。";
-    return;
-  }
-  
-  // Base64のヘッダー（data:image/jpeg;base64,）を除去
-  const base64Data = record.imageData.split(',')[1];
-  const fileName = `証拠画像_第${week}回_${currentStudentId}.jpg`;
-  
-  const res = await callGAS('uploadProofImage', {
-    courseId: courseId,
-    week: week,
-    studentId: currentStudentId,
-    studentName: currentStudentName,
-    imageName: fileName,
-    imageBase64: base64Data
-  });
-  
-  if (res.success) {
-    statusMsg.innerText = "✅ 教員への提出が完了しました！";
-    statusMsg.style.color = "green";
-    btnElem.style.display = 'none'; // 提出済みのボタンは隠す
-  } else {
-    statusMsg.innerText = "❌ 提出に失敗しました。時間をおいて再試行してください。";
-    statusMsg.style.color = "red";
-    btnElem.disabled = false;
-  }
-}
 
 // ==========================================
 // 🛠 管理者用 JSロジック
