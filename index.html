@@ -435,6 +435,22 @@
       <div id="student-course-area">
           <h3>📚 履修中の講義</h3>
           <div id="student-my-courses"></div>
+          
+          <div class="card" style="background:#e8f8f5; border: 2px solid #1abc9c; margin-top:20px;">
+            <h3 style="margin-top:0; color:#16a085;">📂 提出控え（画像フォルダ）</h3>
+            <p style="font-size:0.9rem; color:#555;">回答を送信すると、自動的に採点結果の証拠画像がここに保存されます。通信エラーなどで提出できなかった場合は、ここから教員へ再提出してください。</p>
+            <button class="btn-lms" style="background:#16a085; width:auto;" onclick="openStudentFolder()">画像フォルダを開く</button>
+          </div>
+      </div>
+
+      <div id="student-folder-area" class="hidden">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <button class="btn-lms btn-secondary" style="width:auto;" onclick="backToStudentDashFromFolder()">← ダッシュボードに戻る</button>
+        </div>
+        <h3 style="color:#005f73;">📂 端末内に保存された提出控え</h3>
+        <p style="font-size:0.85rem; color:#666;">※このデータは現在お使いのブラウザ内部にのみ保存されています。</p>
+        <div id="student-folder-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+           </div>
       </div>
 
       <div id="student-lesson-area" class="hidden">
@@ -527,6 +543,67 @@ async function callGAS(action, params = {}) {
     alert("通信エラーが発生しました: " + error);
     return { success: false };
   }
+}
+
+// ==========================================
+// 💾 ブラウザ内蔵データベース（IndexedDB）設定
+// ==========================================
+const LOCAL_DB_NAME = "ClassLMS_LocalDB";
+const LOCAL_STORE_NAME = "student_receipts";
+
+function openLMSDatabase() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(LOCAL_DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(LOCAL_STORE_NAME)) {
+        db.createObjectStore(LOCAL_STORE_NAME, { keyPath: "id", autoIncrement: true });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveReceiptToLocal(courseId, week, title, base64Data) {
+  const db = await openLMSDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOCAL_STORE_NAME, "readwrite");
+    const store = tx.objectStore(LOCAL_STORE_NAME);
+    const record = {
+      courseId: courseId,
+      week: week,
+      title: title,
+      timestamp: new Date().toLocaleString(),
+      imageData: base64Data,
+      studentId: currentStudentId
+    };
+    store.add(record);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getReceiptsFromLocal() {
+  const db = await openLMSDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOCAL_STORE_NAME, "readonly");
+    const store = tx.objectStore(LOCAL_STORE_NAME);
+    const req = store.getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteReceiptFromLocal(id) {
+  const db = await openLMSDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(LOCAL_STORE_NAME, "readwrite");
+    const store = tx.objectStore(LOCAL_STORE_NAME);
+    const req = store.delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
 }
 
 // ==========================================
@@ -1271,59 +1348,48 @@ async function checkQuiz(quizData, week) {
   document.getElementById('quiz-result').scrollIntoView({behavior:'smooth'});
 
   try {
-    if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue; font-weight:bold;">データを送信しています。このままお待ちください...</p>');
-    
+    if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue; font-weight:bold;">データを処理しています。このままお待ちください...</p>');
+
+    // ① まずブラウザの画像フォルダに控えを自動保存する
+    document.getElementById('submit-msg').innerText = "📝 ブラウザ内の「画像フォルダ」に提出控えを作成しています...";
+    const base64Img = await generateCanvasImage();
+    const courseTitle = document.getElementById('student-course-title').innerText;
+    await saveReceiptToLocal(currentCourseId, week, courseTitle, base64Img);
+
+    // ② GAS（サーバー）へ送信
+    document.getElementById('submit-msg').innerText = "🌐 サーバーへデータを送信しています...";
     const res = await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
     
     if (res.success) {
-      // 正常にGASに保存された場合
-      document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信が完了し、提出データが保存されました！</span>";
-      
-      // 回答記録と動画履歴の両方をクリア
+      document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信完了！提出控えも「画像フォルダ」に保存されました。</span>";
       localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
       localStorage.removeItem(`lms_video_${currentStudentId}_${currentCourseId}_${week}`); 
     } else {
-      // GASからの応答がエラーだった場合（同時アクセス過多など）
-      throw new Error(res.message || "サーバー側でエラーが発生しました。");
+      throw new Error(res.message || "サーバー側エラー");
     }
     
   } catch (e) {
-    // 通信エラー、またはGASエラーだった場合の処理
-    document.getElementById('submit-msg').innerHTML = `<span style="color:red; font-weight:bold;">❌ 通信エラーで送信に失敗しました。<br>証拠として現在の画面を画像として自動保存します。</span>`;
-    
-    // エラー証拠画像をダウンロードする関数を呼び出す
-    saveProofAsJPEG();
+    document.getElementById('submit-msg').innerHTML = `<span style="color:red; font-weight:bold;">❌ 通信エラーで送信に失敗しました。<br>回答の証拠は端末の「画像フォルダ」に自動保存されています。ダッシュボードに戻り、そこから教員へ再提出してください。</span>`;
   }
 }
 
-// ==========================================
-// 📸 送信エラー時の証拠JPEG自動保存機能
-// ==========================================
-function saveProofAsJPEG() {
-  const element = document.getElementById('student-quiz-area');
-  
-  // YouTubeのiframeがあるとセキュリティ制限(CORS)で画像化が止まるため一時的に非表示にする
-  const iframes = element.querySelectorAll('iframe');
-  iframes.forEach(iframe => iframe.style.display = 'none');
 
-  // 画面をCanvas（画像）に変換
-  html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" }).then(canvas => {
-    // ダウンロード用のリンクを作成
-    const link = document.createElement('a');
-    // ファイル名（例：送信エラー証拠_第3回_240001.jpg）
-    link.download = `送信エラー証拠_第${window.currentLessonWeek}回_${currentStudentId}.jpg`;
-    // JPEG形式で出力（品質0.9）
-    link.href = canvas.toDataURL("image/jpeg", 0.9);
-    link.click();
-    
-    // 非表示にした動画エリアを元に戻す
-    iframes.forEach(iframe => iframe.style.display = 'block'); 
-    
-    alert("⚠️【重要】通信エラーが発生したため、未提出となっています。\n\n回答内容と採点結果の「証拠画像（JPEG）」を端末にダウンロードしました。\n担当教員にこの画像を見せて対応を求めてください。");
-  }).catch(err => {
+// ==========================================
+// 📸 画像生成・フォルダ処理機能
+// ==========================================
+async function generateCanvasImage() {
+  const element = document.getElementById('student-quiz-area');
+  const iframes = element.querySelectorAll('iframe');
+  iframes.forEach(iframe => iframe.style.display = 'none'); // 動画を一時非表示
+  
+  try {
+    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" });
     iframes.forEach(iframe => iframe.style.display = 'block');
-    alert("証拠画像の保存にも失敗しました。至急、この画面のスクリーンショットを撮ってください。");
-  });
+    return canvas.toDataURL("image/jpeg", 0.9);
+  } catch (e) {
+    iframes.forEach(iframe => iframe.style.display = 'block');
+    throw e;
+  }
 }
 
 function downloadQuizPDF(btn) {
@@ -1338,6 +1404,97 @@ function downloadQuizPDF(btn) {
   html2pdf().set(opt).from(element).save().then(() => {
     btn.innerText = "📄 PDFで保存"; btn.disabled = false; iframes.forEach(iframe => iframe.style.display = 'block');
   });
+}
+
+// ==========================================
+// 📂 学生：ローカル画像フォルダの操作
+// ==========================================
+async function openStudentFolder() {
+  document.getElementById('student-course-area').classList.add('hidden');
+  document.getElementById('student-folder-area').classList.remove('hidden');
+  const container = document.getElementById('student-folder-list');
+  container.innerHTML = "<p>読み込み中...</p>";
+  
+  const allReceipts = await getReceiptsFromLocal();
+  // 自分の学籍番号のものだけ抽出し、新しい順に並び替え
+  const myReceipts = allReceipts.filter(r => r.studentId === currentStudentId).reverse();
+  
+  container.innerHTML = "";
+  if (myReceipts.length === 0) {
+    container.innerHTML = "<p style='color:#666;'>保存されている提出控えはありません。</p>";
+    return;
+  }
+  
+  myReceipts.forEach(record => {
+    const fileName = `提出控え_第${record.week}回_${currentStudentId}.jpg`;
+    container.innerHTML += `
+      <div class="card" style="padding:15px; border:2px solid #ccc; background:#fff; margin:0;">
+        <h4 style="margin-top:0; font-size:1rem; color:#005f73;">${record.title} (第${record.week}回)</h4>
+        <p style="font-size:0.8rem; color:#666;">保存日時: ${record.timestamp}</p>
+        <img src="${record.imageData}" style="width:100%; height:150px; object-fit:cover; border:1px solid #eee; margin-bottom:10px; cursor:zoom-in;" onclick="window.open(this.src)" title="クリックして拡大">
+        
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <a href="${record.imageData}" download="${fileName}" class="btn-lms" style="text-align:center; text-decoration:none; background:#ee9b00; padding:8px;">📥 端末にダウンロード</a>
+          <button class="btn-lms" style="background:#e74c3c; padding:8px;" onclick="submitProofImageFromFolder(${record.id}, '${record.courseId}', '${record.week}', this)">📤 先生に証拠として提出</button>
+          <button class="btn-lms btn-secondary" style="padding:8px; background:#95a5a6;" onclick="removeReceiptUI(${record.id})">🗑 この画像を削除</button>
+        </div>
+        <p id="folder-status-${record.id}" style="font-size:0.85rem; font-weight:bold; margin-top:5px;"></p>
+      </div>
+    `;
+  });
+}
+
+function backToStudentDashFromFolder() {
+  document.getElementById('student-folder-area').classList.add('hidden');
+  document.getElementById('student-course-area').classList.remove('hidden');
+}
+
+async function removeReceiptUI(id) {
+  if(confirm("この提出控えを削除しますか？\n（サーバーには影響しませんが、ブラウザから画像が消えます）")) {
+    await deleteReceiptFromLocal(id);
+    openStudentFolder(); // 再描画
+  }
+}
+
+// フォルダから直接教員（GAS）へ画像を提出する処理
+async function submitProofImageFromFolder(id, courseId, week, btnElem) {
+  if(!confirm(`第${week}回の証拠画像を教員に提出しますか？`)) return;
+  
+  const statusMsg = document.getElementById(`folder-status-${id}`);
+  btnElem.disabled = true;
+  statusMsg.innerText = "画像を提出中...";
+  statusMsg.style.color = "blue";
+  
+  // DBから画像データを再取得
+  const allReceipts = await getReceiptsFromLocal();
+  const record = allReceipts.find(r => r.id === id);
+  if(!record) {
+    statusMsg.innerText = "❌ 画像が見つかりません。";
+    return;
+  }
+  
+  // Base64のヘッダー（data:image/jpeg;base64,）を除去
+  const base64Data = record.imageData.split(',')[1];
+  const fileName = `証拠画像_第${week}回_${currentStudentId}.jpg`;
+  
+  const res = await callGAS('uploadProofImage', {
+    courseId: courseId,
+    week: week,
+    studentId: currentStudentId,
+    studentName: currentStudentName,
+    imageName: fileName,
+    imageBase64: base64Data
+  });
+  
+  if (res.success) {
+    statusMsg.innerText = "✅ 教員への提出が完了しました！";
+    statusMsg.style.color = "green";
+    btnElem.style.display = 'none'; // 提出済みのボタンは隠す
+  } else {
+    statusMsg.innerText = "❌ 提出に失敗しました。時間をおいて再試行してください。";
+    statusMsg.style.color = "red";
+    btnElem.disabled = false;
+  }
 }
 
 // ==========================================
