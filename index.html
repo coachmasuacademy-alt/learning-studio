@@ -963,6 +963,13 @@ function hideStuRegForm() {
 function backToStudentDash() {
   document.getElementById('student-lesson-area').classList.add('hidden');
   document.getElementById('student-course-area').classList.remove('hidden');
+  
+  // ▼▼ 追加：講義一覧に戻る時は、裏でのチェック処理（ポーリング）を停止する ▼▼
+  if (studentGroupRefreshInterval) {
+    clearInterval(studentGroupRefreshInterval);
+    studentGroupRefreshInterval = null;
+  }
+  // ▲▲ 追加ここまで ▲▲
 }
 
 async function doStudentRegister() {
@@ -1039,6 +1046,14 @@ async function openStudentCourse(courseId, courseName) {
   document.getElementById('student-lesson-area').classList.remove('hidden');
   document.getElementById('student-course-title').innerText = courseName;
   currentCourseId = courseId;
+  
+  // ▼▼ 追加：講義を開いた瞬間から、グループワークの公開状態を10秒ごとに裏でチェックする ▼▼
+  loadStudentAssignedGroup(true);
+  if (!studentGroupRefreshInterval) {
+    studentGroupRefreshInterval = setInterval(() => loadStudentAssignedGroup(true), 10000);
+  }
+  // ▲▲ 追加ここまで ▲▲
+
   await loadStudentLessons(courseId);
 }
 
@@ -2139,17 +2154,16 @@ function openStudentGroupWork() {
   document.getElementById('view-student-dash').classList.add('hidden');
   document.getElementById('view-student-groupwork').classList.remove('hidden');
   loadStudentAssignedGroup(false);
-  // 10秒に1回、自動でグループ変更がないか確認する
-  if (!studentGroupRefreshInterval) {
-    studentGroupRefreshInterval = setInterval(() => loadStudentAssignedGroup(true), 10000);
-  }
+  
+  // ※自動更新の設定は openStudentCourse に移動したためここからは削除しました
 }
 
 function closeStudentGroupWork() {
   document.getElementById('view-student-groupwork').classList.add('hidden');
   // 戻るときに学生ダッシュボード画面全体を再表示する
   document.getElementById('view-student-dash').classList.remove('hidden');
-  if (studentGroupRefreshInterval) { clearInterval(studentGroupRefreshInterval); studentGroupRefreshInterval = null; }
+  
+  // ※講義画面（課題一覧）に戻るだけなので、裏の自動更新は止めないように変更しました
 }
 
 async function loadStudentAssignedGroup(isAutoRefresh = false) {
