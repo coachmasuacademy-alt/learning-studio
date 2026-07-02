@@ -1350,18 +1350,33 @@ async function checkQuiz(quizData, week) {
   try {
     if(submitBtn) submitBtn.insertAdjacentHTML('afterend', '<p id="submit-msg" style="color:blue; font-weight:bold;">データを処理しています。このままお待ちください...</p>');
 
-    // ① まずブラウザの画像フォルダに控えを自動保存する
-    document.getElementById('submit-msg').innerText = "📝 ブラウザ内の「画像フォルダ」に提出控えを作成しています...";
-    const base64Img = await generateCanvasImage();
-    const courseTitle = document.getElementById('student-course-title').innerText;
-    await saveReceiptToLocal(currentCourseId, week, courseTitle, base64Img);
+    // ▼▼▼ 修正：画像生成と送信の処理を完全に切り離す ▼▼▼
+    let isImageSaved = false;
+    try {
+      // ① ブラウザの画像フォルダに控えを自動保存する
+      document.getElementById('submit-msg').innerText = "📝 端末内に提出控えの画像を作成しています...";
+// ▼カッコの中に引数を追加します
+const base64Img = await generateCanvasImage(quizData, studentAnswers, score, totalScoreQuestions);
+const courseTitle = document.getElementById('student-course-title').innerText;
+      await saveReceiptToLocal(currentCourseId, week, courseTitle, base64Img);
+      isImageSaved = true; // 成功したフラグを立てる
+    } catch (imgError) {
+      // 画像生成に失敗してもシステムを止めず、エラーを握りつぶして次に進む
+      console.warn("スマホのメモリ制限により画像の保存をスキップしました");
+    }
 
-    // ② GAS（サーバー）へ送信
-    document.getElementById('submit-msg').innerText = "🌐 サーバーへデータを送信しています...";
+    // ② GAS（サーバー）へ送信（上の画像処理が失敗してもここは必ず実行される）
+    document.getElementById('submit-msg').innerText = "🌐 サーバーへ回答データを送信しています...";
     const res = await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
     
     if (res.success) {
-      document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信完了！提出控えも「画像フォルダ」に保存されました。</span>";
+      // 画像保存に成功したか失敗したかで、学生に見せるメッセージを変える
+      if (isImageSaved) {
+        document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信完了！提出控えも画像フォルダに保存されました。</span>";
+      } else {
+        document.getElementById('submit-msg').innerHTML = "<span style='color:green; font-weight:bold;'>✅ 送信完了！（※端末の制限により提出控えの画像保存はスキップされました）</span>";
+      }
+      
       localStorage.removeItem(`lms_draft_${currentStudentId}_${currentCourseId}_${week}`);
       localStorage.removeItem(`lms_video_${currentStudentId}_${currentCourseId}_${week}`); 
     } else {
@@ -1377,33 +1392,57 @@ async function checkQuiz(quizData, week) {
 // ==========================================
 // 📸 画像生成・フォルダ処理機能
 // ==========================================
-async function generateCanvasImage() {
-  const element = document.getElementById('student-quiz-area');
-  const iframes = element.querySelectorAll('iframe');
-  iframes.forEach(iframe => iframe.style.display = 'none'); // 動画を一時非表示
-  
-  // ▼ 追加：スマホ（画面幅が狭い場合）かどうかを判定
-  const isMobile = window.innerWidth <= 768;
-  // ▼ 追加：スマホならスケール（解像度）を 1.0 に下げ、PCなら 1.5 にする
-  const renderScale = isMobile ? 1.0 : 1.5;
+async function generateCanvasImage(quizData, studentAnswers, score, totalScoreQuestions) {
+  // 1. 撮影用の「軽量なレシート画面（隠し要素）」を作成
+  const receiptDiv = document.createElement('div');
+  receiptDiv.style.position = 'absolute';
+  receiptDiv.style.left = '-9999px'; // 画面外に隠す（ユーザーには見えない）
+  receiptDiv.style.top = '0';
+  receiptDiv.style.width = '600px';  // スマホでも見やすい固定幅
+  receiptDiv.style.background = '#ffffff';
+  receiptDiv.style.padding = '20px';
+  receiptDiv.style.fontFamily = '"Helvetica Neue", Arial, sans-serif';
+  receiptDiv.style.color = '#333';
+  receiptDiv.style.boxSizing = 'border-box';
+
+  // 2. レシートの中身（テキストのみ）を組み立てる
+  const courseTitle = document.getElementById('student-course-title').innerText.replace(" (プレビュー中)", "");
+
+  let html = `<h2 style="margin-top:0; border-bottom:2px solid #005f73; padding-bottom:10px; color:#005f73;">📝 提出控えレポート</h2>`;
+  html += `<p style="margin:5px 0;"><b>講義:</b> ${courseTitle}</p>`;
+  html += `<p style="margin:5px 0;"><b>学籍番号:</b> ${currentStudentId}</p>`;
+  html += `<p style="margin:5px 0;"><b>氏名:</b> ${currentStudentName}</p>`;
+  html += `<p style="margin:5px 0; color:#d35400; font-weight:bold;"><b>自動採点スコア:</b> ${score} / ${totalScoreQuestions} 点</p>`;
+  html += `<hr style="border:0; border-top:1px solid #ccc; margin:15px 0;">`;
+
+  // 回答一覧をコンパクトに並べる
+  quizData.forEach((q, i) => {
+    const ans = studentAnswers[i] || "未回答";
+    html += `<div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #eee;">`;
+    html += `<div style="font-size: 14px; font-weight: bold; margin-bottom:4px;">Q${i+1}. ${q.text}</div>`;
+    html += `<div style="font-size: 14px; color: #2980b9;">回答: ${ans}</div>`;
+    html += `</div>`;
+  });
+
+  receiptDiv.innerHTML = html;
+  document.body.appendChild(receiptDiv); // 一旦裏側でページに追加（撮影のため）
 
   try {
-    const canvas = await html2canvas(element, { 
-      scale: renderScale, // 変数を適用
+    // 3. この軽量なレシートだけを撮影する
+    const canvas = await html2canvas(receiptDiv, { 
+      scale: 1.0, // 等倍で十分綺麗に撮れます
       useCORS: true, 
       backgroundColor: "#ffffff",
-      logging: false // ログ出力をオフにして処理を少し軽くする
+      logging: false 
     });
-    iframes.forEach(iframe => iframe.style.display = 'block');
     
-    // ▼ 変更：スマホの場合は JPEGの画質も 0.7 に下げてデータサイズを軽くする
-    const quality = isMobile ? 0.7 : 0.9;
-    return canvas.toDataURL("image/jpeg", quality);
+    // 4. 撮影が終わったらレシートをゴミ箱へ捨てる
+    document.body.removeChild(receiptDiv); 
+    return canvas.toDataURL("image/jpeg", 0.7); // 軽くして返す
     
   } catch (e) {
-    iframes.forEach(iframe => iframe.style.display = 'block');
-    // エラーが起きた時に原因がわかるように警告を出す
-    alert("【警告】端末のメモリ不足により、提出控えの画像化に失敗しました。提出自体は続行します。"); 
+    if(document.body.contains(receiptDiv)) document.body.removeChild(receiptDiv);
+    alert("【警告】端末のメモリ不足により、提出控えの画像化に失敗しました。"); 
     throw e;
   }
 }
