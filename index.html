@@ -1382,12 +1382,28 @@ async function generateCanvasImage() {
   const iframes = element.querySelectorAll('iframe');
   iframes.forEach(iframe => iframe.style.display = 'none'); // 動画を一時非表示
   
+  // ▼ 追加：スマホ（画面幅が狭い場合）かどうかを判定
+  const isMobile = window.innerWidth <= 768;
+  // ▼ 追加：スマホならスケール（解像度）を 1.0 に下げ、PCなら 1.5 にする
+  const renderScale = isMobile ? 1.0 : 1.5;
+
   try {
-    const canvas = await html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: "#ffffff" });
+    const canvas = await html2canvas(element, { 
+      scale: renderScale, // 変数を適用
+      useCORS: true, 
+      backgroundColor: "#ffffff",
+      logging: false // ログ出力をオフにして処理を少し軽くする
+    });
     iframes.forEach(iframe => iframe.style.display = 'block');
-    return canvas.toDataURL("image/jpeg", 0.9);
+    
+    // ▼ 変更：スマホの場合は JPEGの画質も 0.7 に下げてデータサイズを軽くする
+    const quality = isMobile ? 0.7 : 0.9;
+    return canvas.toDataURL("image/jpeg", quality);
+    
   } catch (e) {
     iframes.forEach(iframe => iframe.style.display = 'block');
+    // エラーが起きた時に原因がわかるように警告を出す
+    alert("【警告】端末のメモリ不足により、提出控えの画像化に失敗しました。提出自体は続行します。"); 
     throw e;
   }
 }
