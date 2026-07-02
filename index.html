@@ -366,13 +366,16 @@
 </div>
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:10px;">
-  <h3 style="margin:0;">📊 学生グループ一覧（履歴表示）</h3>
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h3 style="margin:0;">📊 学生グループ一覧（履歴表示）</h3>
+    <button class="btn-lms" style="width:auto; padding:4px 8px; font-size:0.85rem; background:#27ae60;" onclick="setAllAttendance(true)">✅ 全員に✔</button>
+    <button class="btn-lms" style="width:auto; padding:4px 8px; font-size:0.85rem; background:#95a5a6;" onclick="setAllAttendance(false)">⬜ 全員の✔を外す</button>
+  </div>
   <div style="display:flex; gap:10px;">
     <button class="btn-lms btn-secondary" style="width:auto; padding:5px 10px; background:#c0392b;" onclick="clearGroupHistory()">🗑 履歴リセット</button>
     <button class="btn-lms btn-secondary" style="width:auto; padding:5px 10px;" onclick="loadTeacherGroupWork()">↻ 最新状態を読み込み</button>
   </div>
 </div>
-
 
         
         <div style="overflow-x:auto; margin-top:10px;">
@@ -2043,6 +2046,18 @@ function toggleStudentAttendance(index, isChecked) {
       row.style.opacity = isChecked ? "1" : "0.5"; // チェックが外れたら行を半透明にする
     }
   }
+}
+
+function setAllAttendance(isAttend) {
+  if (currentGroupWorkStudents.length === 0) return;
+  
+  // 全学生の出席ステータスを一括書き換え
+  currentGroupWorkStudents.forEach(s => {
+    s.isActive = isAttend;
+  });
+  
+  // 画面のテーブルを再描画して変更を反映
+  renderTeacherGroupList(currentGroupWorkStudents);
 }
 
 function generateGroups() {
