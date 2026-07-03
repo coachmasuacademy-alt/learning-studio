@@ -106,7 +106,7 @@
         <input type="text" id="stu-reg-name" placeholder="お名前">
         <input type="email" id="stu-reg-email" placeholder="メールアドレス">
         <input type="password" id="stu-reg-pass" placeholder="パスワード">
-        <button class="btn-lms" onclick="doStudentRegister()">登録する</button>
+        <button class="btn-lms" onclick="doStudentRegister(this)">登録する</button>
         <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideStuRegForm()">キャンセル</button>
       </div>
 
@@ -114,7 +114,7 @@
         <h3>教員ログイン</h3>
         <input type="email" id="tea-email" placeholder="メールアドレス">
         <input type="password" id="tea-pass" placeholder="パスワード">
-        <button class="btn-lms" onclick="doTeacherLogin()">ログイン</button>
+        <button class="btn-lms" onclick="doTeacherLogin(this)">ログイン</button>
         <hr>
         <button class="btn-lms btn-secondary" onclick="showRegForm()">新規教員登録はこちら</button>
       </div>
@@ -124,14 +124,14 @@
         <input type="text" id="reg-name" placeholder="お名前">
         <input type="email" id="reg-email" placeholder="メールアドレス">
         <input type="password" id="reg-pass" placeholder="パスワード">
-        <button class="btn-lms" onclick="doTeacherRegister()">登録する</button>
+        <button class="btn-lms" onclick="doTeacherRegister(this)">登録する</button>
         <button class="btn-lms btn-secondary" style="margin-top:5px;" onclick="hideRegForm()">キャンセル</button>
       </div>
 
       <div id="form-admin-login" class="hidden">
         <h3>管理者ログイン</h3>
         <input type="password" id="admin-pass" placeholder="管理者パスワード">
-        <button class="btn-lms" onclick="doAdminLogin()" style="background:#333;">管理者としてログイン</button>
+        <button class="btn-lms" onclick="doAdminLogin(this)" style="background:#333;">管理者としてログイン</button>
       </div>
     </div>
 
@@ -284,7 +284,7 @@
               <option value="ワンダーフォーゲル部">ワンダーフォーゲル部</option>
             </optgroup>
           </select>
-          <button class="btn-lms" style="margin-top:10px; background:#2980b9;" onclick="saveStudentCategory()">所属を保存</button>
+          <button class="btn-lms" style="margin-top:10px; background:#2980b9;" onclick="saveStudentCategory(this)">所属を保存</button>
         </div>
         
         <div class="card" style="background:#fcf3cf; border: 2px solid #f1c40f;">
@@ -293,6 +293,14 @@
           <p id="student-leader-msg" style="font-size:1.1rem; font-weight:bold; color:#e67e22; margin-top:5px;"></p>
           <button class="btn-lms" style="width:auto; padding:5px 10px; background:#f39c12;" onclick="loadStudentAssignedGroup()">↻ グループを更新</button>
         </div>
+
+<div class="card" style="background:#e8f6f3; border: 2px solid #1abc9c; margin-top:15px; box-shadow:none;" id="student-jigsaw-area">
+          <h3 style="margin-top:0; color:#16a085;">🧩 グループワーク課題（ジグソー法）</h3>
+          <div id="student-jigsaw-content">
+            <span style="color:#999;">割り当てを待っています...</span>
+          </div>
+        </div>
+
 <div class="card" style="background:#eaf2f8; border: 2px solid #3498db; margin-top:15px; box-shadow:none;">
           <h3 style="margin-top:0; color:#2980b9;">💬 ディスカッションテーマ</h3>
           <div id="student-theme-display">
@@ -307,6 +315,23 @@
       <div class="card">
         <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="closeTeacherGroupWork()">← 戻る</button>
         <h2 style="color:#8e44ad; margin-top:0;" id="teacher-groupwork-title">🧑‍🤝‍🧑 グループワーク管理</h2>
+
+<div class="card" style="background:#eaf2f8; border: 2px solid #3498db; margin-top:15px; box-shadow:none;">
+          <h3 style="margin-top:0; color:#2980b9;">🧩 ジグソー法テーマ設定</h3>
+          <p style="font-size:0.9rem; color:#666;">各グループの大テーマと、4人分の小テーマ（スライド・説明文PDF）を設定します。</p>
+          <button class="btn-lms" style="background:#3498db; width:auto;" onclick="openJigsawModal()">テーマ設定を開く</button>
+        </div>
+
+        <div id="modal-jigsaw" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:2000; overflow-y:auto; padding:20px; box-sizing:border-box;">
+          <div class="card" style="max-width:900px; margin:0 auto; background:#fff;">
+            <h2 style="color:#005f73; margin-top:0;">🧩 ジグソー法テーマ設定 (最大10グループ)</h2>
+            <div id="jigsaw-form-container" style="max-height: 60vh; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#f4f6f7;"></div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+              <button class="btn-lms" onclick="saveJigsawSettings(this)">設定を保存して公開する</button>
+              <button class="btn-lms btn-secondary" onclick="document.getElementById('modal-jigsaw').classList.add('hidden')">閉じる</button>
+            </div>
+          </div>
+        </div>
 
         <div class="card" style="background:#fff3e0; border: 2px solid #e67e22; margin-top:15px; margin-bottom:20px; box-shadow:none;">
           <h3 style="margin-top:0; color:#d35400;">🚪 学生への入室許可</h3>
@@ -325,7 +350,7 @@
             </select>
             <input type="number" id="group-split-num" placeholder="数値を入力" style="flex:1; min-width:100px;" value="4" min="1">
             <button class="btn-lms" style="background:#8e44ad; width:auto;" onclick="generateGroups()">グループを自動生成</button>
-            <button class="btn-lms" style="background:#27ae60; width:auto;" onclick="saveGeneratedGroups()">結果を学生に公開（保存）</button>
+            <button class="btn-lms" style="background:#27ae60; width:auto;" onclick="saveGeneratedGroups(this)">結果を学生に公開（保存）</button>
           </div>
         </div>
 
@@ -412,7 +437,7 @@
       </button>
 
       <div style="display:flex; gap:10px; border-top: 1px solid #ccc; padding-top: 15px;">
-        <button class="btn-lms" onclick="doSaveLesson()">保存する</button>
+        <button class="btn-lms" onclick="doSaveLesson(this)">保存する</button>
         <button class="btn-lms btn-secondary" onclick="closeEditor()">キャンセル</button>
       </div>
     </div>
@@ -432,7 +457,7 @@
             <input type="text" id="join-course-id" placeholder="講義ID" style="flex:1;">
             <input type="text" id="join-course-pass" placeholder="講義パスワード" style="flex:1;">
         </div>
-        <button class="btn-lms" onclick="doJoinCourse()">履修登録</button>
+        <button class="btn-lms" onclick="doJoinCourse(this)">履修登録</button>
       </div>
       
       <div id="student-course-area">
@@ -530,24 +555,41 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxNLd5g5BARCfh1dCJoRIfrjeau9LNMvxYcY1Odwv4VCi8AfMEyMtdcK3rj9t2e_xmsXw/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxix8Dp_Ton47mQQ20WPxBN854mtBcOZ8JGcjZkPvBFDN1A8OfEeGcvHIGlvdDuSg7ayA/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
 
-async function callGAS(action, params = {}) {
+async function callGAS(action, params = {}, maxRetries = 2) {
   const formData = new URLSearchParams();
   formData.append('action', action);
   for (const key in params) { formData.append(key, params[key]); }
-  try {
-    const response = await fetch(GAS_API_URL, { method: "POST", body: formData });
-    return await response.json();
-  } catch (error) {
-    alert("通信エラーが発生しました: " + error);
-    return { success: false };
+  
+  // 指定した回数（今回は最大3回）だけ通信にトライする
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(GAS_API_URL, { method: "POST", body: formData });
+      
+      // Google側でエラー画面が返された場合もエラーとして検知する
+      if (!response.ok) throw new Error(`HTTPエラー: ${response.status}`);
+      
+      const data = await response.json();
+      return data; // 成功したらデータを返して終了
+      
+    } catch (error) {
+      console.warn(`通信エラー (試行 ${attempt + 1}/${maxRetries + 1}):`, error);
+      
+      // 最後のトライでも失敗した場合のみ、画面にエラーを出す
+      if (attempt === maxRetries) {
+        alert("通信が不安定なため、処理に失敗しました。少し待ってから再度お試しください。");
+        return { success: false };
+      }
+      
+      // 失敗した場合は、少し（1秒〜2秒）待ってから再トライする
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
   }
 }
-
 // ==========================================
 // 💾 ブラウザ内蔵データベース（IndexedDB）設定
 // ==========================================
@@ -650,23 +692,23 @@ function hideRegForm() {
   document.getElementById('form-teacher-login').classList.remove('hidden');
 }
 
-async function doTeacherRegister() {
+async function doTeacherRegister(btn) {
   const n = document.getElementById('reg-name').value;
   const e = document.getElementById('reg-email').value;
   const p = document.getElementById('reg-pass').value;
   if(!n || !e || !p) return alert("全て入力してください");
   
-  const btn = event.target; btn.disabled = true; btn.innerText = "通信中...";
+  btn.disabled = true; btn.innerText = "通信中...";
   const res = await callGAS('teacherRegister', {name: n, email: e, password: p});
   alert(res.message);
   if(res.success) hideRegForm();
   btn.disabled = false; btn.innerText = "登録する";
 }
 
-async function doTeacherLogin() {
+async function doTeacherLogin(btn) {
   const e = document.getElementById('tea-email').value;
   const p = document.getElementById('tea-pass').value;
-  const btn = event.target; btn.disabled = true; btn.innerText = "ログイン中...";
+  btn.disabled = true; btn.innerText = "ログイン中...";
 
   const res = await callGAS('teacherLogin', {email: e, password: p});
   if(res.success) {
@@ -729,8 +771,9 @@ async function openCourseEdit(id, name) {
   document.getElementById('view-teacher-dash').classList.add('hidden');
   document.getElementById('view-course-edit').classList.remove('hidden');
   document.getElementById('edit-lesson-list').innerHTML = "<p>データ取得中...</p>";
-  
+
   const res = await callGAS('getLessonsForTeacher', {courseId: id});
+  
   if(res.success) {
     currentLessonsData = res.lessons; // データを退避
     const div = document.getElementById('edit-lesson-list');
@@ -749,6 +792,9 @@ async function openCourseEdit(id, name) {
         </div>
       </div>`;
     }
+  } else {
+    // ▼▼▼ この else ブロックを追加してエラー画面を表示させる ▼▼▼
+    document.getElementById('edit-lesson-list').innerHTML = `<p style="color:red; font-weight:bold;">データの取得に失敗しました: ${res.message}</p>`;
   }
 }
 
@@ -891,7 +937,7 @@ function updateQuestionLabels(container) {
   container.querySelectorAll('.question-item .q-label').forEach((item, idx) => { item.innerText = `問 ${idx + 1}`; });
 }
 
-async function doSaveLesson() {
+async function doSaveLesson(btn) {
   const week = document.getElementById('editor-week').dataset.week;
   const title = document.getElementById('editor-title').value;
   const date = document.getElementById('editor-date').value;
@@ -931,7 +977,7 @@ let hasError = false;
   });
   if (hasError) return;
 
-  const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
+  btn.disabled = true; btn.innerText = "保存中...";
   const res = await callGAS('saveLessonData', { courseId: currentCourseId, week: week, title: title, date: date, isOpen: isOpenValue, json: JSON.stringify({ sessions: sessions }) });
   alert("保存しました");
   closeEditor();
@@ -972,14 +1018,14 @@ function backToStudentDash() {
   // ▲▲ 追加ここまで ▲▲
 }
 
-async function doStudentRegister() {
+async function doStudentRegister(btn) {
   const sid = document.getElementById('stu-reg-id').value;
   const n = document.getElementById('stu-reg-name').value;
   const e = document.getElementById('stu-reg-email').value;
   const p = document.getElementById('stu-reg-pass').value;
   if(!sid || !n || !e || !p) return alert("全て入力してください");
   
-  const btn = event.target; btn.disabled = true; btn.innerText = "通信中...";
+  btn.disabled = true; btn.innerText = "通信中...";
   const res = await callGAS('studentRegister', { studentId: sid, name: n, email: e, password: p });
   alert(res.message);
   if(res.success) hideStuRegForm();
@@ -1025,12 +1071,12 @@ async function loadMyCourses() {
   }
 }
 
-async function doJoinCourse() {
+async function doJoinCourse(btn) {
   const id = document.getElementById('join-course-id').value;
   const pass = document.getElementById('join-course-pass').value;
   if(!id || !pass) return alert("入力してください");
   
-  const btn = event.target; btn.disabled = true; btn.innerText = "登録中...";
+  btn.disabled = true; btn.innerText = "登録中...";
   const res = await callGAS('joinCourse', { email: currentStudentEmail, courseId: id, coursePass: pass });
   alert(res.message);
   if(res.success) {
@@ -1534,10 +1580,10 @@ async function removeReceiptUI(id) {
 // ==========================================
 let adminAllStudents = [], adminAllTeachers = [], adminAllCourses = [], adminAllEnrollments = [], courseNameMap = {}; 
 
-async function doAdminLogin() {
+async function doAdminLogin(btn) {
   const p = document.getElementById('admin-pass').value;
   if(!p) return alert("入力してください");
-  const btn = event.target; btn.disabled = true; btn.innerText = "認証中...";
+  btn.disabled = true; btn.innerText = "認証中...";
   const res = await callGAS('adminLogin', {password: p});
   if(res.success) {
     document.getElementById('view-login').classList.add('hidden');
@@ -2011,7 +2057,7 @@ function renderTeacherGroupList(students) {
     <th>学籍番号</th>
     <th>氏名</th>
     <th>カテゴリー</th>
-    <th style="background:#d0ece7; text-align:center; width:70px;">基準</th>`;
+    <th style="width:50px; text-align:center;">担当</th> <th style="background:#d0ece7; text-align:center; width:70px;">基準</th>`;
   
   for(let i = 1; i <= maxHistory; i++) {
     const circleNum = i <= 20 ? String.fromCharCode(0x245F + i) : `(${i})`;
@@ -2046,6 +2092,7 @@ function renderTeacherGroupList(students) {
       <td>${s.id || s.studentId || "-"}</td>
       <td><b>${s.name || "-"}${leaderIcon}</b></td>
       <td>${s.category || "未選択"}</td>
+      <td style="text-align:center;"><b>${s.role || "-"}</b></td>
       <td style="text-align:center; background:#f4fcfaf0;">${baseBadge}</td>
       ${historyCells}
       <td style="text-align:center; background:#fdf7f4;">${groupBadge}</td>
@@ -2089,17 +2136,29 @@ function generateGroups() {
 
   let groupCount = splitType === 'count' ? splitNum : Math.ceil(targets.length / splitNum);
 
-  // 出席者にグループを割り振る
+  // ==========================================
+  // ▼▼▼ 今回修正した部分（ここから） ▼▼▼
+  // ==========================================
+  let groupRoleCounters = {};
+  // 出席者にグループと役割を割り振る
   targets.forEach((s, index) => {
     s.group = (index % groupCount) + 1;
     s.isLeader = false; // リーダー権限をリセット
+    
+    // 役割(1〜4)を割り振り
+    if (!groupRoleCounters[s.group]) groupRoleCounters[s.group] = 1;
+    s.role = groupRoleCounters[s.group]++; 
   });
 
-  // 欠席者はグループから外し、リーダー権限もリセット
+  // 欠席者はグループから外し、リーダー権限・役割もリセット
   absentees.forEach(s => {
     s.group = "未割り当て";
     s.isLeader = false;
+    s.role = null;
   });
+  // ==========================================
+  // ▲▲▲ 今回修正した部分（ここまで） ▲▲▲
+  // ==========================================
 
   // 各グループの1人目を自動的にリーダー(👑)に任命
   for (let i = 1; i <= groupCount; i++) {
@@ -2113,7 +2172,7 @@ function generateGroups() {
   alert("出席者を対象にグループとリーダーを仮生成しました。「結果を学生に公開」ボタンで確定してください。");
 }
 
-async function saveGeneratedGroups() {
+async function saveGeneratedGroups(btn) {
   if (currentGroupWorkStudents.length === 0) return alert("データがありません");
   
   // 【確定タイミングで現在のグループを履歴(history)にスタックする】
@@ -2126,7 +2185,7 @@ async function saveGeneratedGroups() {
     }
   });
 
-  const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
+  btn.disabled = true; btn.innerText = "保存中...";
   
   const updates = currentGroupWorkStudents.map(s => ({ 
     email: s.email, 
@@ -2134,10 +2193,10 @@ async function saveGeneratedGroups() {
     group: s.group, 
     isLeader: s.isLeader, 
     category: s.category,
-    baseGroup: s.baseGroup || "",     // 基準グループを内包
-    history: s.history || [],         // 履歴配列を内包
-    // ▼ 追加：チェックボックスの状態（出席フラグ）をGASに送る
-    isActive: s.isActive !== false
+    baseGroup: s.baseGroup || "", 
+    history: s.history || [], 
+    isActive: s.isActive !== false,
+    role: s.role || 1 // ←★これを追加
   }));
 
   const res = await callGAS('saveGeneratedGroups', { courseId: currentCourseId, groupDataJson: JSON.stringify(updates) });
@@ -2206,6 +2265,7 @@ async function loadStudentAssignedGroup(isAutoRefresh = false) {
       
       if (myData.group && myData.group !== "未割り当て") {
         loadStudentTheme();
+        loadStudentJigsaw(myData.group, myData.baseGroup, myData.role); // ★これを追加
       }
     } else {
       document.getElementById('student-assigned-group').innerText = "未割り当て";
@@ -2213,10 +2273,10 @@ async function loadStudentAssignedGroup(isAutoRefresh = false) {
   }
 }
 
-async function saveStudentCategory() {
+async function saveStudentCategory(btn) {
   const cat = document.getElementById('student-category-select').value;
   if (!cat) return alert("カテゴリーを選択してください");
-  const btn = event.target; btn.disabled = true; btn.innerText = "保存中...";
+  btn.disabled = true; btn.innerText = "保存中...";
   // ※GAS側に saveStudentCategory アクションが必要です
   const res = await callGAS('saveStudentCategory', { courseId: currentCourseId, email: currentStudentEmail, studentId: currentStudentId, category: cat });
   alert(res.message || "カテゴリーを保存しました");
@@ -2392,6 +2452,147 @@ async function loadStudentTheme() {
   } else {
     displayArea.innerHTML = '<span style="color:#e74c3c;">現在進行中のディカッションテーマはありません。</span>';
   }
+}
+
+// ==========================================
+// 🧩 ジグソー法 用ロジック（教員・学生）
+// ==========================================
+
+let currentJigsawMaster = []; // マスタデータを一時保存する変数
+
+async function openJigsawModal() {
+  document.getElementById('modal-jigsaw').classList.remove('hidden');
+  const container = document.getElementById('jigsaw-form-container');
+  container.innerHTML = "読込中...";
+  
+  // 1. 各グループにすでに割り当て済みのデータ（以前保存したもの）を取得
+  const resAssigned = await callGAS('getJigsawData', { courseId: currentCourseId });
+  const assignedData = (resAssigned.success && resAssigned.data) ? JSON.parse(resAssigned.data) : {};
+  
+  // 2. スプレッドシートの「JigsawMaster」シートから、選択肢の一覧を取得
+  const resMaster = await callGAS('getJigsawMasterData', { courseId: currentCourseId }); // ←★引数を追加
+  currentJigsawMaster = resMaster.success ? resMaster.list : [];
+  
+  // 3. プルダウンのHTMLを組み立てる
+  let masterOptions = `<option value="">-- シートに登録されたテーマから呼び出す --</option>`;
+  currentJigsawMaster.forEach((m, idx) => {
+    masterOptions += `<option value="${idx}">${m.main}</option>`;
+  });
+
+  let html = "";
+  // 10グループ分の入力枠を作成
+  for(let g=1; g<=10; g++) {
+    const d = assignedData[g] || { main: "", sub: [{},{},{},{}] };
+    html += `<div style="border:1px solid #ccc; margin-bottom:10px; padding:10px; background:#fff;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+        <h4 style="margin:0; color:#005f73;">第 ${g} グループ</h4>
+        <select onchange="applyJigsawMaster(${g}, this.value)" style="width:auto; padding:5px; margin:0; background:#e8f8f5; border:1px solid #1abc9c; color:#16a085; font-weight:bold; cursor:pointer;">
+          ${masterOptions}
+        </select>
+      </div>
+
+      <input type="text" id="jig-m-${g}" placeholder="大テーマ（例：教育におけるAIの活用）" value="${d.main || ''}" style="border:2px solid #3498db; font-weight:bold;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">`;
+    
+    for(let r=1; r<=4; r++) {
+      const sub = d.sub[r-1] || { t: "", s: "", e: "" };
+      html += `<div style="flex:1; min-width:200px; background:#f9f9f9; padding:10px; border-radius:4px; border:1px dashed #ccc;">
+        <b style="color:#e67e22;">担当 ${r} 用の小テーマ</b>
+        <input type="text" id="jig-t-${g}-${r}" placeholder="小テーマ名" value="${sub.t || ''}" style="margin-top:5px; padding:5px;">
+        <input type="text" id="jig-s-${g}-${r}" placeholder="スライドPDF URL" value="${sub.s || ''}" style="margin-top:5px; padding:5px;">
+        <input type="text" id="jig-e-${g}-${r}" placeholder="説明文PDF URL" value="${sub.e || ''}" style="margin-top:5px; padding:5px;">
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  container.innerHTML = html;
+}
+
+// プルダウンを選択したときに、下の入力枠に自動で文字を入れる関数
+function applyJigsawMaster(groupNum, masterIdx) {
+  if (masterIdx === "") return;
+  const m = currentJigsawMaster[masterIdx];
+  if (!m) return;
+  
+  // 大テーマをセット
+  document.getElementById(`jig-m-${groupNum}`).value = m.main;
+  
+  // 小テーマとURLをセット
+  for(let r=1; r<=4; r++) {
+    document.getElementById(`jig-t-${groupNum}-${r}`).value = m.sub[r-1].t;
+    document.getElementById(`jig-s-${groupNum}-${r}`).value = m.sub[r-1].s;
+    document.getElementById(`jig-e-${groupNum}-${r}`).value = m.sub[r-1].e;
+  }
+}
+
+async function saveJigsawSettings(btn) {
+  let data = {};
+  for(let g=1; g<=10; g++) {
+    data[g] = { main: document.getElementById(`jig-m-${g}`).value, sub: [] };
+    for(let r=1; r<=4; r++) {
+      data[g].sub.push({
+        t: document.getElementById(`jig-t-${g}-${r}`).value,
+        s: document.getElementById(`jig-s-${g}-${r}`).value,
+        e: document.getElementById(`jig-e-${g}-${r}`).value
+      });
+    }
+  }
+  btn.disabled = true; btn.innerText = "保存中...";
+  const res = await callGAS('saveJigsawData', { courseId: currentCourseId, jigsawJson: JSON.stringify(data) });
+  alert(res.message);
+  document.getElementById('modal-jigsaw').classList.add('hidden');
+  btn.disabled = false; btn.innerText = "設定を保存して公開する";
+}
+
+async function loadStudentJigsaw(currentGroup, baseGroup, role) {
+  const area = document.getElementById('student-jigsaw-content');
+  area.innerHTML = "課題データを読み込み中...";
+  
+  const res = await callGAS('getJigsawData', { courseId: currentCourseId });
+  if (!res.success) { area.innerHTML = "通信エラー"; return; }
+  const data = JSON.parse(res.data || "{}");
+
+  // フェーズ判定：元のグループ(baseGroup)が設定されており、今のグループと違うなら「シャッフルフェーズ」
+  const isShufflePhase = baseGroup && baseGroup !== "" && String(baseGroup) !== String(currentGroup);
+  const targetGroup = isShufflePhase ? baseGroup : currentGroup; 
+  
+  const groupData = data[targetGroup];
+  if (!groupData || !groupData.main) {
+    area.innerHTML = `<span style="color:#999;">現在割り当てられているジグソー課題はありません。</span>`;
+    return;
+  }
+
+  let html = "";
+  if (!isShufflePhase) {
+    // 【フェーズ1】自分の小テーマを読み、グループ内で共有するフェーズ
+    const mySub = groupData.sub[role - 1] || {};
+    html += `<div style="background:#fff; padding:15px; border-radius:6px; border-left:5px solid #e67e22; margin-bottom:15px;">
+      <h4 style="margin:0 0 10px 0; color:#d35400;">① グループ大テーマ</h4>
+      <p style="font-size:1.1rem; font-weight:bold; margin:0;">${groupData.main}</p>
+    </div>`;
+    
+    html += `<div style="background:#fff; padding:15px; border-radius:6px; border-left:5px solid #2980b9;">
+      <h4 style="margin:0 0 10px 0; color:#2980b9;">② あなたの担当 (担当 ${role || '未設定'})</h4>
+      <p style="font-size:1.1rem; font-weight:bold; margin:0 0 10px 0;">小テーマ：${mySub.t || '未設定'}</p>
+      <p style="font-size:0.9rem; color:#666;">各自で以下の資料を読み、理解した内容を同じグループのメンバーに説明してください。全員の説明後、大テーマについて議論します。</p>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        ${mySub.s ? `<a href="${mySub.s}" target="_blank" class="btn-lms" style="text-align:center; text-decoration:none; background:#8e44ad; width:auto; padding:8px 15px;">📊 スライド(PDF)を見る</a>` : ''}
+        ${mySub.e ? `<a href="${mySub.e}" target="_blank" class="btn-lms btn-secondary" style="text-align:center; text-decoration:none; width:auto; padding:8px 15px;">📄 説明文(PDF)を見る</a>` : ''}
+      </div>
+    </div>`;
+  } else {
+    // 【フェーズ2】シャッフル後の共有フェーズ
+    html += `<div style="background:#fff; padding:15px; border-radius:6px; border-left:5px solid #27ae60;">
+      <h4 style="margin:0 0 10px 0; color:#27ae60;">🔄 シャッフルディスカッション</h4>
+      <p style="font-size:0.9rem; color:#666; margin-top:0;">あなたは元々 <b>第 ${baseGroup} グループ</b> でした。<br>今の新しいグループのメンバーに対して、<b>元のグループでどのような議論を行ったか</b>を代表して説明してください。</p>
+      <div style="background:#f4f6f7; padding:10px; margin-top:10px; border-radius:4px;">
+        <b style="color:#333;">元のグループで議論した大テーマ：</b><br>
+        <span style="font-size:1.1rem; font-weight:bold; color:#d35400;">${groupData.main}</span>
+      </div>
+    </div>`;
+  }
+  area.innerHTML = html;
 }
 </script>
 </body>
