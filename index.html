@@ -74,6 +74,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
 </head>
 <body>
 
@@ -160,7 +161,7 @@
         <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToTeacherDash()">← 戻る</button>
         <h2 id="edit-course-title" style="margin-top:0;">講義編集</h2>
 <button class="btn-lms" id="btn-group-work" style="background:#ff9f43; margin-bottom:20px;" onclick="openTeacherGroupWork()">🧑‍🤝‍🧑 グループワーク（授業展開）管理</button>
-        <button class="btn-lms" style="background:#005f73; margin-bottom:20px;" onclick="openAllSubmissions()">📊 全15回の提出状況を一括確認・CSV出力</button>
+        <button class="btn-lms" style="background:#005f73; margin-bottom:20px;" onclick="openAllSubmissions()">📊 全15回の提出状況を一括確認・Excel出力</button>
         <p>編集したい回を選択してください</p>
         <div id="edit-lesson-list"></div>
       </div>
@@ -194,7 +195,7 @@
       <div class="card" style="max-width: 100%; margin: 0 auto; box-sizing: border-box;">
         <button class="btn-lms btn-secondary" style="width:auto; margin-bottom:10px;" onclick="backToCourseEditFromAll()">← 戻る</button>
         <h2 id="all-submissions-title" style="margin-top:0;">全回提出状況一覧</h2>
-        <button class="btn-lms" style="background:#27ae60; margin-bottom: 15px; width:auto;" onclick="downloadAllSubmissionsCSV()">📥 全回状況をCSVで出力</button>
+        <button class="btn-lms" style="background:#27ae60; margin-bottom: 15px; width:auto;" onclick="downloadAllSubmissionsExcel()">📥 全回状況をExcelで出力</button>
         
         <div style="overflow-x: auto; max-height: 70vh; overflow-y: auto; border: 1px solid #ccc; background: #fff;">
           <table class="admin-table" style="font-size: 0.8rem; min-width: 1600px; width: 100%; border-collapse: separate; border-spacing: 0;">
@@ -393,6 +394,7 @@
 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:10px;">
   <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
     <h3 style="margin:0;">📊 学生グループ一覧（履歴表示）</h3>
+    <input type="text" id="search-groupwork-student" placeholder="🔍 名前・学籍番号で検索" style="width:200px; margin:0; padding:6px;" oninput="filterGroupWorkStudents()">
     <button class="btn-lms" style="width:auto; padding:4px 8px; font-size:0.85rem; background:#27ae60;" onclick="setAllAttendance(true)">✅ 全員に✔</button>
     <button class="btn-lms" style="width:auto; padding:4px 8px; font-size:0.85rem; background:#95a5a6;" onclick="setAllAttendance(false)">⬜ 全員の✔を外す</button>
   </div>
@@ -555,7 +557,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxix8Dp_Ton47mQQ20WPxBN854mtBcOZ8JGcjZkPvBFDN1A8OfEeGcvHIGlvdDuSg7ayA/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyf7_CVh0NVaSZdFI21i07mP4F5Eebu_pWxK7ZUxNYCcRe_EaAEytAG-oHDLbpPR6pBOQ/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -1723,19 +1725,24 @@ async function openAllSubmissions() {
   const res = await callGAS('getAllSubmissions', { courseId: currentCourseId });
   const tbody = document.getElementById('list-all-submissions'); tbody.innerHTML = "";
   
-  // ▼ 新しい計算ロジック（古いものは削除済み） ▼
+  // ▼ 新しい計算ロジック（分母の算出） ▼
   let totalCourseFullScore = 0;
   for (let w = 1; w <= 15; w++) {
     let maxFullForWeek = 0;
     
-    // 方法1: 学生の提出データ（"3/5"など）の分母から逆算
+    // 方法1: 学生の提出データから逆算
     if (res.success && res.list) {
       res.list.forEach(student => {
         const s = student.scores ? student.scores[w] : undefined;
-        if (s && typeof s === 'string' && s.includes('/')) {
-          const parts = s.split('/');
-          const full = parseInt(parts[1], 10) || 0;
-          if (full > maxFullForWeek) maxFullForWeek = full;
+        if (s !== undefined && s !== null && s !== "未提出") {
+          if (typeof s === 'string' && s.includes('/')) {
+            const parts = s.split('/');
+            const full = parseInt(parts[1], 10) || 0;
+            if (full > maxFullForWeek) maxFullForWeek = full;
+          } else if (!isNaN(parseFloat(s))) {
+            const val = parseFloat(s);
+            if (val > maxFullForWeek) maxFullForWeek = val;
+          }
         }
       });
     }
@@ -1757,6 +1764,7 @@ async function openAllSubmissions() {
     totalCourseFullScore += maxFullForWeek;
   }
 
+  // ▼ 学生ごとの行データを生成 ▼
   if (res.success && res.list && res.list.length > 0) {
     res.list.sort((a, b) => String(a.studentId || "").localeCompare(String(b.studentId || ""), undefined, { numeric: true }));
     currentAllSubmissionsData = res.list;
@@ -1768,10 +1776,14 @@ async function openAllSubmissions() {
         if (score === "未提出") {
           weeksHtml += `<td style="color:#c0392b; background:#fdf2f2; text-align:center; border-bottom:1px solid #ccc;">未提出</td>`;
         } else {
+          // ▼ 修正：「提出済み」への強制変換をやめ、そのまま点数を表示する
           weeksHtml += `<td style="color:#005f73; font-weight:bold; background:#e8f6f3; text-align:center; border-bottom:1px solid #ccc;">${score}</td>`;
+          
           if (typeof score === 'string' && score.includes('/')) {
             const parts = score.split('/');
             totalEarned += parseInt(parts[0], 10) || 0; // 正解数（分子）のみを累積
+          } else if (!isNaN(parseFloat(score))) {
+            totalEarned += parseFloat(score); // スラッシュがない数値の場合も加算
           }
         }
       }
@@ -1784,7 +1796,6 @@ async function openAllSubmissions() {
         }
       }
       
-      // !important で他のスタイルによる上書きを防止し、背景色もうっすら赤にする
       const scoreStyle = isUnder60 
         ? "color:#e74c3c !important; font-weight:bold; background:#fbeeee !important; text-align:center; border-bottom:1px solid #ccc;" 
         : "color:#005f73; font-weight:bold; background:#e0f2f1; text-align:center; border-bottom:1px solid #ccc;";
@@ -1826,19 +1837,30 @@ function backToCourseEditFromAll() {
   document.getElementById('view-course-edit').classList.remove('hidden');
 }
 
-function downloadAllSubmissionsCSV() {
+async function downloadAllSubmissionsExcel() {
   if (currentAllSubmissionsData.length === 0) return alert("データがありません");
 
-  // ━━━ 【修正箇所：CSV出力用の分母算出ロジックも画面表示と統一】 ━━━
+  // 出力ボタンを無効化して連打を防ぐ
+  const btn = event.target;
+  const originalText = btn.innerText;
+  btn.innerText = "Excel作成中...";
+  btn.disabled = true;
+
+  // 全回の合計得点の分母を算出
   let totalCourseFullScore = 0;
   for (let w = 1; w <= 15; w++) {
     let maxFullForWeek = 0;
     currentAllSubmissionsData.forEach(student => {
       const s = student.scores ? student.scores[w] : undefined;
-      if (s && typeof s === 'string' && s.includes('/')) {
-        const parts = s.split('/');
-        const full = parseInt(parts[1], 10) || 0;
-        if (full > maxFullForWeek) maxFullForWeek = full;
+      if (s !== undefined && s !== null && s !== "未提出") {
+        if (typeof s === 'string' && s.includes('/')) {
+          const parts = s.split('/');
+          const full = parseInt(parts[1], 10) || 0;
+          if (full > maxFullForWeek) maxFullForWeek = full;
+        } else if (!isNaN(parseFloat(s))) {
+          const val = parseFloat(s);
+          if (val > maxFullForWeek) maxFullForWeek = val;
+        }
       }
     });
     
@@ -1858,28 +1880,90 @@ function downloadAllSubmissionsCSV() {
     totalCourseFullScore += maxFullForWeek;
   }
 
-  let csvContent = "\uFEFF学籍番号,氏名,合計得点,第1回,第2回,第3回,第4回,第5回,第6回,第7回,第8回,第9回,第10回,第11回,第12回,第13回,第14回,第15回\n";
-  
+  // Excelワークブックの作成
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('提出状況一覧');
+
+  // 列の設定（ヘッダーと幅）
+  worksheet.columns = [
+    { header: '学籍番号', key: 'id', width: 15 },
+    { header: '氏名', key: 'name', width: 20 },
+    { header: '合計得点', key: 'total', width: 12 },
+    ...Array.from({ length: 15 }, (_, i) => ({ header: `第${i + 1}回`, key: `w${i + 1}`, width: 12 }))
+  ];
+
+  // ヘッダー行の装飾（背景色グレー、太字）
+  worksheet.getRow(1).eachCell(cell => {
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEEEEE' } };
+    cell.font = { bold: true };
+    cell.alignment = { horizontal: 'center' };
+  });
+
+  // データ行の追加
   currentAllSubmissionsData.forEach(student => {
     let totalEarned = 0;
     for (let w = 1; w <= 15; w++) {
       const score = student.scores[w];
-      if (score !== "未提出" && typeof score === 'string' && score.includes('/')) {
-        const parts = score.split('/');
-        totalEarned += parseInt(parts[0], 10) || 0;
+      if (score !== "未提出") {
+        if (typeof score === 'string' && score.includes('/')) {
+          const parts = score.split('/');
+          totalEarned += parseInt(parts[0], 10) || 0;
+        } else if (!isNaN(parseFloat(score))) {
+          totalEarned += parseFloat(score);
+        }
       }
     }
-    // CSVの一括出力行に反映
-    let rowStr = `${escapeCSV(student.studentId)},${escapeCSV(student.studentName)},${escapeCSV(totalEarned + '/' + totalCourseFullScore)}`;
-    for (let w = 1; w <= 15; w++) { rowStr += `,${escapeCSV(student.scores[w])}`; }
-    csvContent += rowStr + "\n";
+
+    const rowData = {
+      id: student.studentId || "-",
+      name: student.studentName || "-",
+      total: `${totalEarned}/${totalCourseFullScore}`
+    };
+
+    // 各回のスコアをセット
+    for (let w = 1; w <= 15; w++) {
+      rowData[`w${w}`] = student.scores[w] || "";
+    }
+
+    const row = worksheet.addRow(rowData);
+
+    // 行ごとのスタイル調整（中央揃えと「未提出」セルの赤色付け）
+    row.eachCell((cell, colNumber) => {
+      // 学籍番号と氏名以外は中央揃え
+      if (colNumber > 2) {
+        cell.alignment = { horizontal: 'center' };
+      }
+      
+      // 未提出セルへのスタイル適用
+      if (cell.value === "未提出") {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFDF2F2' } // 背景：薄い赤
+        };
+        cell.font = {
+          color: { argb: 'FFC0392B' }, // 文字：濃い赤
+          bold: true
+        };
+      }
+    });
   });
-  
+
+  // Excelファイルのダウンロード処理
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const link = document.createElement("a");
-  link.setAttribute("href", URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })));
-  link.setAttribute("download", `${document.getElementById('edit-course-title').innerText.replace(" の編集", "")}_一括提出状況.csv`);
-  document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  link.href = URL.createObjectURL(blob);
+  link.download = `${document.getElementById('edit-course-title').innerText.replace(" の編集", "")}_一括提出状況.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // ボタンを元に戻す
+  btn.innerText = originalText;
+  btn.disabled = false;
 }
+
 // ==========================================
 // 📄 エクセル読み込み機能
 // ==========================================
@@ -2098,6 +2182,11 @@ function renderTeacherGroupList(students) {
       <td style="text-align:center; background:#fdf7f4;">${groupBadge}</td>
     </tr>`;
   });
+
+  // ▼▼ 追加：再描画時に検索キーワードが残っていればフィルタリングを再適用 ▼▼
+  if (document.getElementById('search-groupwork-student')) {
+    filterGroupWorkStudents();
+  }
 }
 
 function toggleStudentAttendance(index, isChecked) {
@@ -2343,6 +2432,35 @@ function clearGroupHistory() {
   currentGroupWorkStudents.forEach(s => { s.history = []; });
   renderTeacherGroupList(currentGroupWorkStudents);
   alert("履歴データをリセットしました。\n※確定させるには「結果を学生に公開（保存）」を押してください。");
+}
+
+// ==========================================
+// 🔍 学生グループ一覧の検索フィルタリング
+// ==========================================
+function filterGroupWorkStudents() {
+  const keyword = document.getElementById('search-groupwork-student').value.toLowerCase();
+  const tbody = document.getElementById('list-groupwork-students');
+  if (!tbody) return;
+  
+  const rows = tbody.getElementsByTagName('tr');
+  
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const tds = row.getElementsByTagName('td');
+    
+    // データ行でない場合（「登録されている学生がいません」などのメッセージ行）はスキップ
+    if (tds.length < 3) continue;
+    
+    // tds[1] が学籍番号、tds[2] が氏名
+    const studentIdText = tds[1].innerText || tds[1].textContent;
+    const nameText = tds[2].innerText || tds[2].textContent;
+    
+    if (studentIdText.toLowerCase().includes(keyword) || nameText.toLowerCase().includes(keyword)) {
+      row.style.display = ""; // マッチした場合は表示
+    } else {
+      row.style.display = "none"; // マッチしない場合は非表示
+    }
+  }
 }
 
 // ==========================================
