@@ -368,6 +368,7 @@
     <button class="btn-lms" style="background:#1abc9c; width:auto;" onclick="registerBaseGroup()">★ 現在のグループを基準に登録</button>
     <button class="btn-lms" style="background:#e67e22; width:auto;" onclick="restoreBaseGroup()">↺ 基準グループに戻す（割り振り）</button>
     <button class="btn-lms btn-secondary" style="background:#e74c3c; width:auto;" onclick="clearBaseGroup()">✖ 基準を解除</button>
+    <button class="btn-lms" style="background:#8e44ad; width:auto;" onclick="restoreSpecificHistory()">⏱ 指定した過去の履歴に戻す</button>
   </div>
 </div>
 
@@ -558,7 +559,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwDx8DDqc8NGKyaizEfQ1dagxUnk3o83kS1J01mSXD4DXPvp0RzNsF2iJlTt-fyeDF3XQ/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw6rF-Enh4FqDu6cRvjF2h-3Gq6tMpCzoiMHuEobjQyW1g_TVJt18c6QMq5wQ0krDQDxg/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -2463,6 +2464,57 @@ function clearGroupHistory() {
   renderTeacherGroupList(currentGroupWorkStudents);
   alert("グループ割り当てと履歴データを完全に初期化しました。\n※確定させるには「結果を学生に公開（保存）」を押してください。");
 }
+
+function restoreSpecificHistory() {
+  if (currentGroupWorkStudents.length === 0) return alert("データがありません。");
+  
+  // 保持している最大履歴数を計算
+  let maxHistory = 0;
+  currentGroupWorkStudents.forEach(s => {
+    if (s.history && s.history.length > maxHistory) maxHistory = s.history.length;
+  });
+
+  if (maxHistory === 0) {
+    return alert("まだグループの履歴が記録されていません。");
+  }
+
+  // ダイアログで戻したい番号を入力させる
+  const targetStr = prompt(`戻したい履歴の番号を 1 〜 ${maxHistory} の半角数字で入力してください。\n（例：履歴③に戻したい場合は「3」と入力）`);
+  if (!targetStr) return; // キャンセルされた場合
+  
+  const targetNum = parseInt(targetStr, 10);
+  const targetIdx = targetNum - 1; // 配列は0スタートのため-1する
+
+  if (isNaN(targetNum) || targetIdx < 0 || targetIdx >= maxHistory) {
+    return alert("正しい履歴番号が入力されませんでした。");
+  }
+
+  if (!confirm(`全員のグループを「履歴 ${targetNum}」の状態に戻しますか？\n（※欠席扱いになっている学生は未割り当てになります）`)) return;
+
+  // 各学生のグループを履歴から復元する
+  currentGroupWorkStudents.forEach(s => {
+    if (s.isActive === false) {
+      s.group = "未割り当て"; // 欠席者は外す
+    } else if (s.history && s.history[targetIdx] && s.history[targetIdx] !== "-") {
+      s.group = s.history[targetIdx];
+    } else {
+      s.group = "未割り当て";
+    }
+    s.isLeader = false; // リーダー権限を一旦リセット
+  });
+
+  // 各グループの先頭メンバーをリーダー(👑)に再任命
+  let activeGroups = new Set(currentGroupWorkStudents.map(s => s.group).filter(g => g !== "未割り当て"));
+  activeGroups.forEach(gNum => {
+    const member = currentGroupWorkStudents.find(t => t.group === gNum && t.isActive !== false);
+    if(member) member.isLeader = true;
+  });
+
+  // 画面のテーブルを再描画
+  renderTeacherGroupList(currentGroupWorkStudents);
+  alert(`履歴 ${targetNum} の状態に復元しました！\n※受講生画面に反映するには、必ず「結果を学生に公開（保存）」ボタンを押してください。`);
+}
+
 // ==========================================
 // 🔍 学生グループ一覧の検索フィルタリング
 // ==========================================
@@ -2492,63 +2544,65 @@ function filterGroupWorkStudents() {
   }
 }
 
-// ==========================================
-// 💬 ディスカッションテーマ用ロジック群
-// ==========================================
+// ▼▼ 共通の画面描画用関数を新設（通信せずに画面だけ書き換える） ▼▼
+function renderThemesUI(themes) {
+  const container = document.getElementById('teacher-theme-status');
+  let activeGroups = new Set();
+  currentGroupWorkStudents.forEach(s => {
+    const g = parseInt(s.group, 10);
+    if (!isNaN(g)) activeGroups.add(g);
+  });
+  const groupIds = Array.from(activeGroups).sort((a,b) => a - b);
+
+  if (groupIds.length === 0) {
+     container.innerHTML = '<p style="color:#e74c3c; margin:0;">グループが生成されていません。先に「グループ分け自動生成」を行ってください。</p>';
+     return;
+  }
+
+  let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
+  groupIds.forEach(gNum => {
+    const currentTheme = themes[gNum] || "<span style='color:#999;'>未割り当て（シャッフルしてください）</span>";
+    html += `
+      <div style="display:flex; align-items:center; gap:10px; padding:10px; background:#f9f9f9; border-left:4px solid #3498db; border-radius:4px;">
+        <strong style="min-width:70px; color:#2980b9;">グループ ${gNum}</strong>
+        <div style="flex:1;">${currentTheme}</div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+  
+  document.getElementById('btn-shuffle-themes').style.display = 'block';
+  document.getElementById('btn-rotate-theme').style.display = 'block';
+}
+
+
+// ▼▼ 読み込み処理（変更なし・分離したUI関数を呼ぶだけ） ▼▼
 async function loadTeacherThemes() {
   const curriculum = document.getElementById('teacher-theme-curriculum').value;
   const container = document.getElementById('teacher-theme-status');
   const shuffleBtn = document.getElementById('btn-shuffle-themes');
-  const rotateBtn = document.getElementById('btn-rotate-theme'); // ★変更
+  const rotateBtn = document.getElementById('btn-rotate-theme');
   
   if(!curriculum) {
     container.innerHTML = '<p style="color:#999; margin:0;">カリキュラムを選択すると、現在の割り当て状況が表示されます。</p>';
-    shuffleBtn.style.display = 'none';
-    rotateBtn.style.display = 'none'; // ★変更
+    shuffleBtn.style.display = 'none'; rotateBtn.style.display = 'none';
     return;
   }
   
   container.innerHTML = "現在の割り当て状況を読み込み中...";
-  shuffleBtn.style.display = 'none';
-  rotateBtn.style.display = 'none'; // ★変更
+  shuffleBtn.style.display = 'none'; rotateBtn.style.display = 'none';
   
   const res = await callGAS('getThemesForSession', { courseId: currentCourseId, curriculum: curriculum });
   if (res.success) {
-    const themes = res.themes || {};
-    
-    // 現在作成されている有効なグループ番号を抽出
-    let activeGroups = new Set();
-    currentGroupWorkStudents.forEach(s => {
-      const g = parseInt(s.group, 10);
-      if (!isNaN(g)) activeGroups.add(g);
-    });
-    const groupIds = Array.from(activeGroups).sort((a,b) => a - b);
-    
-    if (groupIds.length === 0) {
-       container.innerHTML = '<p style="color:#e74c3c; margin:0;">グループが生成されていません。先に「グループ分け自動生成」を行ってください。</p>';
-       return;
-    }
-
-    let html = `<div style="display:flex; flex-direction:column; gap:10px;">`;
-    groupIds.forEach(gNum => {
-      const currentTheme = themes[gNum] || "<span style='color:#999;'>未割り当て（シャッフルしてください）</span>";
-      html += `
-        <div style="display:flex; align-items:center; gap:10px; padding:10px; background:#f9f9f9; border-left:4px solid #3498db; border-radius:4px;">
-          <strong style="min-width:70px; color:#2980b9;">グループ ${gNum}</strong>
-          <div style="flex:1;">${currentTheme}</div>
-        </div>
-      `;
-    });
-    html += `</div>`;
-    
-    container.innerHTML = html;
-    shuffleBtn.style.display = 'block';
-    rotateBtn.style.display = 'block'; // ★変更
+    renderThemesUI(res.themes || {});
   } else {
     container.innerHTML = "<p style='color:red;'>データの取得に失敗しました。</p>";
   }
 }
 
+
+// ▼▼ シャッフル処理（2回目の通信を廃止） ▼▼
 async function doShuffleThemes() {
   const curriculum = document.getElementById('teacher-theme-curriculum').value;
   if (!curriculum) return;
@@ -2573,14 +2627,18 @@ async function doShuffleThemes() {
 
   alert(res.message);
   if (res.success) {
-    await loadTeacherThemes();
+    // 【改善】再度 loadTeacherThemes() を呼ぶのではなく、返ってきたデータで直接画面を書き換える
+    if (res.themes) {
+      renderThemesUI(res.themes);
+    } else {
+      await loadTeacherThemes(); // 古いGASコード用のフォールバック
+    }
   }
   btn.disabled = false; btn.innerText = "🔀 テーマをランダムに割り振る（シャッフル）";
 }
 
-// ==========================================
-// 🔄 手動テーマローテーション処理
-// ==========================================
+
+// ▼▼ ローテーション処理（2回目の通信を廃止） ▼▼
 async function doRotateThemes() {
   const curriculum = document.getElementById('teacher-theme-curriculum').value;
   if (!curriculum) return;
@@ -2592,14 +2650,18 @@ async function doRotateThemes() {
   btn.disabled = true;
   btn.innerText = "🔄 変更中...";
   
-  // GASのローテーション処理を呼び出す
   const res = await callGAS('rotateThemes', { 
     courseId: currentCourseId,
     curriculum: curriculum
   });
 
   if (res.success) {
-    await loadTeacherThemes(); // 割り当て状況の画面を更新
+    // 【改善】通信を1回に削減
+    if (res.themes) {
+      renderThemesUI(res.themes);
+    } else {
+      await loadTeacherThemes(); 
+    }
     alert("テーマをローテーションしました！\n学生側の画面にも自動的に反映されます。");
   } else {
     alert(res.message);
@@ -2623,13 +2685,24 @@ async function loadStudentTheme() {
 
   const res = await callGAS('getStudentThemes', { courseId: currentCourseId, groupId: groupId });
   if (res.success && res.themes && res.themes.length > 0) {
-    let html = "";
-    res.themes.forEach(t => {
-      html += `<div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed #ccc;">
-                 <span style="color:#e67e22; font-size:0.85rem; font-weight:bold;">【${t.curriculum}】</span><br>
-                 <span style="color:#333;">${t.theme}</span>
-               </div>`;
+    
+    // 【修正部分】「第○回」の数字を比較し、最も数字が大きい（最新の）テーマを1つだけ抽出する
+    const latestTheme = res.themes.reduce((latest, current) => {
+      const getWeekNum = (str) => {
+        const match = str.match(/\d+/);
+        return match ? parseInt(match[0], 10) : 0;
+      };
+      const latestNum = getWeekNum(latest.curriculum);
+      const currentNum = getWeekNum(current.curriculum);
+      return currentNum > latestNum ? current : latest;
     });
+
+    // 最新のテーマのみを表示する
+    let html = `<div style="margin-bottom:10px; padding-bottom:8px; border-bottom:1px dashed #ccc;">
+                  <span style="color:#e67e22; font-size:0.85rem; font-weight:bold;">【${latestTheme.curriculum}】</span><br>
+                  <span style="color:#333;">${latestTheme.theme}</span>
+                </div>`;
+                
     displayArea.innerHTML = html;
   } else {
     displayArea.innerHTML = '<span style="color:#e74c3c;">現在進行中のディカッションテーマはありません。</span>';
