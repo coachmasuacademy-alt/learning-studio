@@ -382,8 +382,9 @@
     <button class="btn-lms btn-secondary" style="width:auto;" onclick="loadTeacherThemes()">↻ 読み込み</button>
   </div>
 
-  <div style="margin-top:15px;">
-    <button id="btn-shuffle-themes" class="btn-lms" style="background:#8e44ad; display:none;" onclick="doShuffleThemes()">🔀 テーマをランダムに割り振る（シャッフル）</button>
+  <div style="margin-top:15px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+    <button id="btn-shuffle-themes" class="btn-lms" style="background:#8e44ad; display:none; width:auto;" onclick="doShuffleThemes()">🔀 テーマを重複なしで割り振る</button>
+    <button id="btn-rotate-theme" class="btn-lms" style="background:#e67e22; display:none; width:auto;" onclick="doRotateThemes()">🔄 テーマをローテーションする（次のテーマへ）</button>
   </div>
 
   <div id="teacher-theme-status" style="margin-top:15px; padding:15px; background:#fff; border-radius:6px; border:1px dashed #ccc;">
@@ -557,7 +558,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyf7_CVh0NVaSZdFI21i07mP4F5Eebu_pWxK7ZUxNYCcRe_EaAEytAG-oHDLbpPR6pBOQ/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwDx8DDqc8NGKyaizEfQ1dagxUnk3o83kS1J01mSXD4DXPvp0RzNsF2iJlTt-fyeDF3XQ/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -2217,27 +2218,53 @@ function generateGroups() {
   const splitNum = parseInt(document.getElementById('group-split-num').value);
   if (!splitNum || splitNum < 1) return alert("数値を正しく入力してください");
 
-  // 出席者（isActive !== false）と欠席者（isActive === false）に分ける
-  let targets = currentGroupWorkStudents.filter(s => s.isActive !== false).sort(() => Math.random() - 0.5);
+  // 出席者と欠席者に分ける
+  let targets = currentGroupWorkStudents.filter(s => s.isActive !== false);
   let absentees = currentGroupWorkStudents.filter(s => s.isActive === false);
 
   if (targets.length === 0) return alert("出席している学生がいません");
 
   let groupCount = splitType === 'count' ? splitNum : Math.ceil(targets.length / splitNum);
 
-  // ==========================================
-  // ▼▼▼ 今回修正した部分（ここから） ▼▼▼
-  // ==========================================
-  let groupRoleCounters = {};
-  // 出席者にグループと役割を割り振る
-  targets.forEach((s, index) => {
-    s.group = (index % groupCount) + 1;
-    s.isLeader = false; // リーダー権限をリセット
-    
-    // 役割(1〜4)を割り振り
-    if (!groupRoleCounters[s.group]) groupRoleCounters[s.group] = 1;
-    s.role = groupRoleCounters[s.group]++; 
+  // ▼▼▼ カテゴリー分散ロジック ▼▼▼
+  // 1. 出席者をカテゴリーごとに分類する
+  let categoryMap = {};
+  targets.forEach(s => {
+    let cat = s.category || "未選択";
+    if (!categoryMap[cat]) categoryMap[cat] = [];
+    categoryMap[cat].push(s);
   });
+
+  // 2. カテゴリーを「所属人数の多い順」に並べ替える（多いところから優先してバラけさせるため）
+  let sortedCategories = Object.keys(categoryMap).sort((a, b) => categoryMap[b].length - categoryMap[a].length);
+
+  // 3. 各カテゴリー内のメンバーの並び順をランダムにシャッフルする
+  sortedCategories.forEach(cat => {
+    categoryMap[cat].sort(() => Math.random() - 0.5);
+  });
+
+  let currentGroupIndex = 1;
+  let groupRoleCounters = {};
+  let newlyAssignedTargets = [];
+
+  // 4. 人数の多いカテゴリーから順番に、グループ1→2→3...と1人ずつ配っていく（ラウンドロビン配置）
+  sortedCategories.forEach(cat => {
+    categoryMap[cat].forEach(s => {
+      s.group = currentGroupIndex;
+      s.isLeader = false; // 一旦リーダーをリセット
+
+      // 役割(1〜4)を割り振り
+      if (!groupRoleCounters[s.group]) groupRoleCounters[s.group] = 1;
+      s.role = groupRoleCounters[s.group]++; 
+
+      newlyAssignedTargets.push(s);
+
+      // 次のグループへ。設定した最大グループ数を超えたら1グループ目に戻る
+      currentGroupIndex++;
+      if (currentGroupIndex > groupCount) currentGroupIndex = 1;
+    });
+  });
+  // ▲▲▲ カテゴリー分散ロジックここまで ▲▲▲
 
   // 欠席者はグループから外し、リーダー権限・役割もリセット
   absentees.forEach(s => {
@@ -2245,20 +2272,17 @@ function generateGroups() {
     s.isLeader = false;
     s.role = null;
   });
-  // ==========================================
-  // ▲▲▲ 今回修正した部分（ここまで） ▲▲▲
-  // ==========================================
 
-  // 各グループの1人目を自動的にリーダー(👑)に任命
+  // 各グループの1人目（＝役割が1の人）を自動的にリーダー(👑)に任命
   for (let i = 1; i <= groupCount; i++) {
-    const member = targets.find(t => t.group === i);
+    const member = newlyAssignedTargets.find(t => t.group === i && t.role === 1);
     if(member) member.isLeader = true;
   }
 
   // 出席者が上、欠席者が下になるように配列を結合して再描画
-  currentGroupWorkStudents = [...targets, ...absentees];
+  currentGroupWorkStudents = [...newlyAssignedTargets, ...absentees];
   renderTeacherGroupList(currentGroupWorkStudents);
-  alert("出席者を対象にグループとリーダーを仮生成しました。「結果を学生に公開」ボタンで確定してください。");
+  alert("カテゴリー（種目）が被らないように配慮してグループを仮生成しました。\n「結果を学生に公開」ボタンで確定してください。");
 }
 
 async function saveGeneratedGroups(btn) {
@@ -2427,13 +2451,18 @@ function restoreBaseGroup() {
 
 function clearGroupHistory() {
   if (currentGroupWorkStudents.length === 0) return;
-  if (!confirm("これまでのグループ分けの履歴（①、②...の列データ）をすべて消去しますか？\n（現在の配置および基準グループの設定は残ります）")) return;
+  if (!confirm("現在のグループ割り当てと、これまでの履歴をすべて初期化（リセット）しますか？\n（※基準グループの設定は残ります）")) return;
   
-  currentGroupWorkStudents.forEach(s => { s.history = []; });
+  currentGroupWorkStudents.forEach(s => { 
+    s.history = []; 
+    s.group = "未割り当て"; // ★現在のグループも初期化
+    s.role = null;          // ★役割もリセット
+    s.isLeader = false;     // ★リーダー権限もリセット
+  });
+  
   renderTeacherGroupList(currentGroupWorkStudents);
-  alert("履歴データをリセットしました。\n※確定させるには「結果を学生に公開（保存）」を押してください。");
+  alert("グループ割り当てと履歴データを完全に初期化しました。\n※確定させるには「結果を学生に公開（保存）」を押してください。");
 }
-
 // ==========================================
 // 🔍 学生グループ一覧の検索フィルタリング
 // ==========================================
@@ -2470,15 +2499,18 @@ async function loadTeacherThemes() {
   const curriculum = document.getElementById('teacher-theme-curriculum').value;
   const container = document.getElementById('teacher-theme-status');
   const shuffleBtn = document.getElementById('btn-shuffle-themes');
+  const rotateBtn = document.getElementById('btn-rotate-theme'); // ★変更
   
   if(!curriculum) {
     container.innerHTML = '<p style="color:#999; margin:0;">カリキュラムを選択すると、現在の割り当て状況が表示されます。</p>';
     shuffleBtn.style.display = 'none';
+    rotateBtn.style.display = 'none'; // ★変更
     return;
   }
   
   container.innerHTML = "現在の割り当て状況を読み込み中...";
   shuffleBtn.style.display = 'none';
+  rotateBtn.style.display = 'none'; // ★変更
   
   const res = await callGAS('getThemesForSession', { courseId: currentCourseId, curriculum: curriculum });
   if (res.success) {
@@ -2511,6 +2543,7 @@ async function loadTeacherThemes() {
     
     container.innerHTML = html;
     shuffleBtn.style.display = 'block';
+    rotateBtn.style.display = 'block'; // ★変更
   } else {
     container.innerHTML = "<p style='color:red;'>データの取得に失敗しました。</p>";
   }
@@ -2543,6 +2576,37 @@ async function doShuffleThemes() {
     await loadTeacherThemes();
   }
   btn.disabled = false; btn.innerText = "🔀 テーマをランダムに割り振る（シャッフル）";
+}
+
+// ==========================================
+// 🔄 手動テーマローテーション処理
+// ==========================================
+async function doRotateThemes() {
+  const curriculum = document.getElementById('teacher-theme-curriculum').value;
+  if (!curriculum) return;
+  
+  if (!confirm("各グループのテーマを次のテーマへスライド（ローテーション）させますか？")) return;
+
+  const btn = document.getElementById('btn-rotate-theme');
+  const originalText = btn.innerText;
+  btn.disabled = true;
+  btn.innerText = "🔄 変更中...";
+  
+  // GASのローテーション処理を呼び出す
+  const res = await callGAS('rotateThemes', { 
+    courseId: currentCourseId,
+    curriculum: curriculum
+  });
+
+  if (res.success) {
+    await loadTeacherThemes(); // 割り当て状況の画面を更新
+    alert("テーマをローテーションしました！\n学生側の画面にも自動的に反映されます。");
+  } else {
+    alert(res.message);
+  }
+  
+  btn.disabled = false;
+  btn.innerText = originalText;
 }
 
 async function loadStudentTheme() {
