@@ -559,7 +559,7 @@
 // ==========================================
 // 🔗 GAS連携設定
 // ==========================================
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbw6rF-Enh4FqDu6cRvjF2h-3Gq6tMpCzoiMHuEobjQyW1g_TVJt18c6QMq5wQ0krDQDxg/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzFwb5SXc4or9oazxi2_hPWbdceyxgZPEEZc0koSyTHC_sejA5CiaNXGBnEUmEaf91dpQ/exec";
 // データを安全に保持するグローバルキャッシュ（文字干渉バグの根絶用）
 let currentLessonsData = {};
 window.videoTrackers = {};
@@ -946,6 +946,7 @@ async function doSaveLesson(btn) {
   const title = document.getElementById('editor-title').value;
   const date = document.getElementById('editor-date').value;
   const isOpenValue = document.getElementById('editor-is-open').value === "true";
+let cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
   
   let sessions = [];
   document.querySelectorAll('.session-item').forEach(sItem => {
@@ -981,8 +982,7 @@ let hasError = false;
   });
   if (hasError) return;
 
-  btn.disabled = true; btn.innerText = "保存中...";
-  const res = await callGAS('saveLessonData', { courseId: currentCourseId, week: week, title: title, date: date, isOpen: isOpenValue, json: JSON.stringify({ sessions: sessions }) });
+  const res = await callGAS('saveLessonData', { courseId: cleanCourseId, week: week, title: title, date: date, isOpen: isOpenValue, json: JSON.stringify({ sessions: sessions }) });
   alert("保存しました");
   closeEditor();
   
@@ -1173,8 +1173,9 @@ function startQuiz(lessonData) {
   if(sessions.length === 0) { document.getElementById('quiz-content').innerHTML = "課題設定がありません。"; return; }
   
   // ★追加：動画の視聴状態をローカルストレージから取得
-  const videoDraftKey = `lms_video_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
-  const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
+  const cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
+const videoDraftKey = `lms_video_${currentStudentId}_${cleanCourseId}_${lessonData.week}`;
+const draftKey = `lms_draft_${currentStudentId}_${cleanCourseId}_${lessonData.week}`;
 
   let html = "", globalQIndex = 0;
   sessions.forEach((sess, sIdx) => {
@@ -1235,7 +1236,6 @@ function startQuiz(lessonData) {
   }
   document.getElementById('quiz-content').innerHTML = html;
 
-  const draftKey = `lms_draft_${currentStudentId}_${currentCourseId}_${lessonData.week}`;
   const savedDraft = JSON.parse(localStorage.getItem(draftKey) || "{}");
   for (let i = 0; i < globalQIndex; i++) {
     if (savedDraft[`q${i}`] !== undefined) {
@@ -1435,7 +1435,8 @@ const courseTitle = document.getElementById('student-course-title').innerText;
 
     // ② GAS（サーバー）へ送信（上の画像処理が失敗してもここは必ず実行される）
     document.getElementById('submit-msg').innerText = "🌐 サーバーへ回答データを送信しています...";
-    const res = await callGAS('submitAnswers', { courseId: currentCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
+    let cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
+const res = await callGAS('submitAnswers', { courseId: cleanCourseId, week: week, studentId: currentStudentId, studentName: currentStudentName, score: `${score}/${totalScoreQuestions}`, answersJson: JSON.stringify(studentAnswers) });
     
     if (res.success) {
       // 画像保存に成功したか失敗したかで、学生に見せるメッセージを変える
@@ -2650,10 +2651,11 @@ async function doRotateThemes() {
   btn.disabled = true;
   btn.innerText = "🔄 変更中...";
   
-  const res = await callGAS('rotateThemes', { 
-    courseId: currentCourseId,
-    curriculum: curriculum
-  });
+  let cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
+const res = await callGAS('rotateThemes', { 
+  courseId: cleanCourseId,
+  curriculum: curriculum
+});
 
   if (res.success) {
     // 【改善】通信を1回に削減
