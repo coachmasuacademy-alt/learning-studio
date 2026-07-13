@@ -1176,7 +1176,7 @@ function startQuiz(lessonData) {
   const cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
 const videoDraftKey = `lms_video_${currentStudentId}_${cleanCourseId}_${lessonData.week}`;
 const draftKey = `lms_draft_${currentStudentId}_${cleanCourseId}_${lessonData.week}`;
-
+const savedVideoState = JSON.parse(localStorage.getItem(videoDraftKey) || "{}");
   let html = "", globalQIndex = 0;
   sessions.forEach((sess, sIdx) => {
     html += `<div class="session-block" style="margin-bottom: 40px; border: 2px solid #e0f2f1; border-radius: 8px; padding: 20px; background: #fff;">
