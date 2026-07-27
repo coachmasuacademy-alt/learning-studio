@@ -162,6 +162,9 @@
         <h2 id="edit-course-title" style="margin-top:0;">講義編集</h2>
 <button class="btn-lms" id="btn-group-work" style="background:#ff9f43; margin-bottom:20px;" onclick="openTeacherGroupWork()">🧑‍🤝‍🧑 グループワーク（授業展開）管理</button>
         <button class="btn-lms" style="background:#005f73; margin-bottom:20px;" onclick="openAllSubmissions()">📊 全15回の提出状況を一括確認・Excel出力</button>
+        <!-- ▼▼▼ ここにボタンを追加 ▼▼▼ -->
+        <button class="btn-lms" style="background:#c0392b; margin-bottom:20px;" onclick="closeAllLessons(this)">🔒 公開中の回を一括で非公開にする</button>
+        <!-- ▲▲▲ ここまで ▲▲▲ -->
         <p>編集したい回を選択してください</p>
         <div id="edit-lesson-list"></div>
       </div>
@@ -997,6 +1000,61 @@ let hasError = false;
 function closeEditor() {
   document.getElementById('view-quiz-editor').classList.add('hidden');
   document.getElementById('view-course-edit').classList.remove('hidden');
+}
+
+async function closeAllLessons(btn) {
+  if(!confirm("現在「公開中」になっているすべての回を「非公開」に変更しますか？\n※通信に数秒〜数十秒かかる場合があります。")) return;
+
+  const cleanCourseId = String(currentCourseId).replace(/_第\d+回.*/, '');
+  let targetWeeks = [];
+
+  // 現在公開中の回をピックアップして配列に詰める
+  for(let i=1; i<=15; i++) {
+    const l = currentLessonsData[i];
+    if(l && (l.isOpen === true || l.isOpen === "true")) {
+      targetWeeks.push(i);
+    }
+  }
+
+  if(targetWeeks.length === 0) {
+    alert("現在公開中になっている回はありません。");
+    return;
+  }
+
+  // ボタンの連打防止と進捗表示
+  const originalText = btn.innerText;
+  btn.disabled = true;
+
+  let successCount = 0;
+  // 対象の回を1つずつ順番に非公開としてGASへ保存していく
+  for(let i=0; i<targetWeeks.length; i++) {
+    const w = targetWeeks[i];
+    const l = currentLessonsData[w];
+    
+    btn.innerText = `非公開にしています (${i+1}/${targetWeeks.length})...`;
+    
+    const res = await callGAS('saveLessonData', {
+      courseId: cleanCourseId,
+      week: w,
+      title: l.title || "",
+      date: l.date || "",
+      isOpen: false, // 強制的に非公開(false)で上書き保存する
+      json: l.quiz || JSON.stringify({ sessions: [] }) // 課題の中身は元のまま維持
+    });
+
+    if(res.success) {
+      successCount++;
+      currentLessonsData[w].isOpen = false; // メモリ上の状態も非公開に同期
+    }
+  }
+
+  btn.innerText = originalText;
+  btn.disabled = false;
+  alert(`完了しました。（${successCount}件の回を非公開にしました）`);
+  
+  // 画面のリストを再描画して「🔴 非公開」の表示に更新する
+  const cleanTitle = document.getElementById('edit-course-title').innerText.replace(" の編集", "");
+  openCourseEdit(currentCourseId, cleanTitle);
 }
 
 // ==========================================
